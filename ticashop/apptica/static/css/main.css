@@ -1,0 +1,252 @@
+/* =========================================================
+   1) Reset mínimo
+   ========================================================= */
+   * { box-sizing: border-box; }
+   html, body { height: 100%; }
+   body {
+     margin: 0;
+     background: #f1f5f9;           /* fondo general */
+     color: #111827;                /* texto principal */
+     font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+   }
+   a { color: inherit; text-decoration: none; }
+   
+   /* Layout + sidebar */
+.layout{
+    display:flex;
+    min-height:100vh
+}
+.barra-lateral{
+  width:220px;background:#0f172a;color:#fff;
+  padding:20px 15px;border-right:1px solid #0b1227;
+  display:flex;flex-direction:column
+}
+.marca{
+    font-size:20px;
+    font-weight:700;
+    margin-bottom:20px}
+.menu{
+    display:flex;
+    flex-direction:column;
+    gap:8px}
+.menu a{
+    display:block;
+    padding:10px 12px;
+    border-radius:8px;color:#cbd5e1;
+    text-decoration:none}
+.menu a:hover{
+    background:#111827;
+    color:#fff}
+.contenido{
+    flex:1;padding:24px;
+    background:#f1f5f9;
+    color:#111827}
+.footer{
+    padding:20px;
+    text-align:center;
+    color:#94a3b8}
+
+   /* =========================================================
+      3) Tipografía / helpers
+      ========================================================= */
+   .page-title { margin: 6px 0 14px; }
+   .m0 { margin: 0; }
+   .spacer { flex: 1; }
+   .right, .num { text-align: right; }
+   .empty { padding: 18px 0; color: #64748b; text-align: center; }  /* muted */
+   
+   /* =========================================================
+      4) Contenedores y grids
+      ========================================================= */
+   .card {
+     background: #ffffff;
+     border: 1px solid #e5e7eb;     /* línea suave */
+     border-radius: 12px;
+     padding: 16px;
+   }
+   .card-title { color: #64748b; font-size: 13px; }  /* muted */
+   .card-value { font-size: 22px; margin-top: 6px; }
+   
+   .grid-4 {
+     display: grid;
+     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+     gap: 16px;
+   }
+   .grid-2 {
+     display: grid;
+     grid-template-columns: repeat(2, 1fr);
+     gap: 12px;
+   }
+   
+   /* =========================================================
+      5) Barra de acciones / Toolbar
+      ========================================================= */
+   .toolbar {
+     display: flex;
+     align-items: center;
+     gap: 10px;
+     margin: 8px 0 16px;
+   }
+   
+   /* =========================================================
+      6) Botones
+      ========================================================= */
+   .btn {
+     display: inline-block;
+     padding: 8px 12px;
+     background: #ffffff;
+     color: #111827;                 /* tinta */
+     border: 1px solid #e5e7eb;
+     border-radius: 8px;
+     transition: border-color .15s ease, background-color .15s ease;
+     cursor: pointer;
+   }
+   .btn:hover { border-color: #9ca3af; }
+   
+   .btn.primary {
+     background: #2563eb;            /* azul primario */
+     border-color: #2563eb;
+     color: #ffffff;
+   }
+   .btn.success {
+     background: #16a34a;            /* verde ok */
+     border-color: #16a34a;
+     color: #ffffff;
+   }
+   .btn.danger {
+     background: #ef4444;            /* rojo peligro */
+     border-color: #ef4444;
+     color: #ffffff;
+   }
+   .btn.ghost {
+     background: transparent;
+     color: #111827;
+     border-color: transparent;
+   }
+   .btn.ghost:hover {
+     background: #f8fafc;            /* leve hover */
+     border-color: #e5e7eb;
+   }
+   
+   /* =========================================================
+      7) Tablas
+      ========================================================= */
+   .table-wrap { overflow: auto; }
+   
+   .table {
+     width: 100%;
+     border-collapse: collapse;
+     background: #ffffff;
+     border-radius: 10px;
+     overflow: hidden;               /* para el borde redondeado */
+   }
+   .table th,
+   .table td {
+     padding: 12px 14px;
+     border-bottom: 1px solid #e5e7eb;
+     text-align: left;
+   }
+   .table thead th {
+     background: #fafafa;
+     color: #64748b;
+     font-weight: 600;
+   }
+   .table .actions .btn { margin-right: 6px; }
+   
+   /* =========================================================
+      8) Badges / Tags
+      ========================================================= */
+   .badge {
+     display: inline-block;
+     padding: 3px 8px;
+     font-size: 12px;
+     background: #e5e7eb;
+     color: #111827;
+     border-radius: 999px;
+   }
+   .badge.ok     { background: rgba(22,163,74,.12);  color: #15803d; }
+   .badge.warn   { background: rgba(245,158,11,.12); color: #b45309; }
+   .badge.danger { background: rgba(239,68,68,.12);  color: #b91c1c; }
+  
+   /* Base pill */
+.tag{
+  display:inline-block;
+  padding:4px 10px;
+  font-size:12px;
+  line-height:1;
+  border-radius:9999px;
+  font-weight:600;
+  white-space:nowrap;
+}
+
+
+   
+   /* =========================================================
+      9) Formularios
+      ========================================================= */
+   .form {
+     background: #ffffff;
+     border: 1px solid #e5e7eb;
+     border-radius: 12px;
+     padding: 16px;
+   }
+   .field label {
+     display: block;
+     color: #64748b;                 /* muted */
+     margin-bottom: 4px;
+     font-size: 13px;
+   }
+   .field input,
+   .field select,
+   .field textarea {
+     width: 100%;
+     padding: 8px 10px;
+     border: 1px solid #e5e7eb;
+     border-radius: 8px;
+     background: #ffffff;
+     color: #111827;
+   }
+   .field input:focus,
+   .field select:focus,
+   .field textarea:focus {
+     outline: none;
+     border-color: #2563eb;
+     box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+   }
+   .form-actions {
+     display: flex;
+     justify-content: flex-end;
+     gap: 10px;
+     margin-top: 12px;
+   }
+   .hint { color: #64748b; font-size: 12px; margin-top: 4px; }
+   .err  { color: #ef4444; font-size: 12px; margin-top: 4px; }
+   
+   /* =========================================================
+      10) Filtros
+      ========================================================= */
+   .filters {
+     display: grid;
+     grid-template-columns: repeat(4, 1fr);
+     gap: 12px;
+     background: #ffffff;
+     border: 1px solid #e5e7eb;
+     border-radius: 10px;
+     padding: 12px;
+     margin-bottom: 12px;
+   }
+   .align-end {
+     display: flex;
+     align-items: end;
+     gap: 8px;
+   }
+   
+   /* =========================================================
+      11) Mensajes flash
+      ========================================================= */
+   .messages { margin-bottom: 12px; }
+   .msg { padding: 10px; border-radius: 8px; margin-bottom: 8px; }
+   .msg.success { background: rgba(22,163,74,.10); }
+   .msg.error   { background: rgba(239,68,68,.10); }
+   
+

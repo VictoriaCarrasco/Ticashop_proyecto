@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Asistencia{% endblock %}
+{% block content %}
+<h1 class="page-title">Control de Asistencia</h1>
+
+<form class="filters" method="get">
+  <div>
+    <label>Desde</label>
+    <input type="date" name="desde" value="{{ request.GET.desde }}">
+  </div>
+  <div>
+    <label>Hasta</label>
+    <input type="date" name="hasta" value="{{ request.GET.hasta }}">
+  </div>
+  <div>
+    <label>Empleado</label>
+    <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Nombre o RUT">
+  </div>
+  <div class="align-end">
+    <button class="btn primary">Filtrar</button>
+    <a class="btn ghost" href="{% url 'asistencia_export' %}?{{ request.GET.urlencode }}">Exportar</a>
+  </div>
+</form>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Empleado</th>
+      <th>Fecha</th>
+      <th>Entrada</th>
+      <th>Salida</th>
+      <th>Horas</th>
+      <th>Estado</th>
+    </tr>
+  </thead>
+  <tbody>
+    {# Espera: registros con attrs empleado.nombre, fecha, hora_entrada, hora_salida, horas_trabajadas, estado #}
+    {% for r in registros %}
+    <tr>
+      <td>{{ r.empleado.nombre }}</td>
+      <td>{{ r.fecha }}</td>
+      <td>{{ r.hora_entrada|default:"-" }}</td>
+      <td>{{ r.hora_salida|default:"-" }}</td>
+      <td>{{ r.horas_trabajadas|default:"-" }}</td>
+      <td>
+        {% if r.estado == "AUSENTE" %}<span class="badge danger">Ausente</span>
+        {% elif r.estado == "TARDANZA" %}<span class="badge warn">Tardanza</span>
+        {% else %}<span class="badge ok">Presente</span>{% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" class="empty">Sin registros.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

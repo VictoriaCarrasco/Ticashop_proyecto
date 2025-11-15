@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Liquidaciones{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+  <h1 class="page-title m0">Liquidaciones de Sueldo</h1>
+  <div class="spacer"></div>
+  <a class="btn primary" href="{% url 'liquidaciones_generar' %}">+ Generar Liquidación</a>
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Empleado</th>
+      <th>Periodo</th>
+      <th>Monto Total</th>
+      <th>Estado</th>
+      <th class="right">Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {# Espera: liquidaciones con attrs empleado.nombre, periodo, monto_total, estado, pdf #}
+    {% for l in liquidaciones %}
+    <tr>
+      <td>{{ l.empleado.nombre }}</td>
+      <td>{{ l.periodo|date:"F Y" }}</td>
+      <td class="num">${{ l.monto_total|floatformat:0 }}</td>
+      <td>
+        {% if l.estado == "FIRMADA" %}
+          <span class="badge ok">Firmada</span>
+        {% else %}
+          <span class="badge warn">Pendiente Firma</span>
+        {% endif %}
+      </td>
+      <td class="right">
+        <a class="btn ghost" href="{% url 'liquidaciones_detalle' l.id %}">Ver</a>
+        {# 👉 Siempre genera y descarga el PDF al vuelo #}
+        <a class="btn" href="{% url 'liquidacion_pdf' l.id %}">Descargar PDF</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="5" class="empty">No hay liquidaciones.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

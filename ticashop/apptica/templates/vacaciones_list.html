@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Vacaciones{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <h1 class="page-title m0">Gestión de Vacaciones</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="{% url 'vacaciones_export' %}">Exportar</a>
+  <a class="btn ghost" href="{% url 'vacaciones_firmar' %}">Firmar digitalmente</a>
+  <a class="btn primary" href="{% url 'vacaciones_nueva' %}">+ Nueva</a>
+</div>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Empleado</th>
+        <th>Fecha Inicio</th>
+        <th>Fecha Fin</th>
+        <th>Días</th>
+        <th>Estado</th>
+        <th class="right">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {# Espera en contexto: solicitudes queryset/list con attrs: empleado.nombre, fecha_inicio, fecha_fin, dias, estado #}
+      {% for v in solicitudes %}
+      <tr>
+        <td>{{ v.empleado.nombre }}</td>
+        <td>{{ v.fecha_inicio }}</td>
+        <td>{{ v.fecha_fin }}</td>
+        <td class="num">{{ v.dias }}</td>
+        <td>
+          {% if v.estado == "APROBADA" %}<span class="badge ok">Aprobada</span>
+          {% elif v.estado == "RECHAZADA" %}<span class="badge danger">Rechazada</span>
+          {% else %}<span class="badge warn">Pendiente</span>{% endif %}
+        </td>
+        <td class="right">
+          <a class="btn ghost" href="{% url 'vacaciones_detalle' v.id %}">Ver</a>
+          <a class="btn success" href="{% url 'vacaciones_aprobar' v.id %}">Aprobar</a>
+          <a class="btn danger" href="{% url 'vacaciones_rechazar' v.id %}">Rechazar</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="empty">Sin solicitudes.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

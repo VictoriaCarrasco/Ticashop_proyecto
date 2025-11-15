@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Inicio · RRHH{% endblock %}
+{% block content %}
+<h1 class="page-title">Panel general</h1>
+
+<div class="grid-4">
+  <!-- Espera en contexto: total_empleados, presentes_hoy, vacaciones_pendientes, liquidaciones_pendientes, comisiones_pendientes -->
+  <div class="card">
+    <div class="card-title">Empleados</div>
+    <div class="card-value">{{ total_empleados|default:"0" }}</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Presentes hoy</div>
+    <div class="card-value">{{ presentes_hoy|default:"0" }}</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Vacaciones pendientes</div>
+    <div class="card-value">{{ vacaciones_pendientes|default:"0" }}</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Liquidaciones sin firma</div>
+    <div class="card-value">{{ liquidaciones_pendientes|default:"0" }}</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Comisiones pendientes</div>
+    <div class="card-value">{{ comisiones_pendientes|default:"0" }}</div>
+  </div>
+</div>
+{% endblock %}

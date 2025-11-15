@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Liquidación de sueldo</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      font-size: 13px;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .bloque {
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #999;
+      border-radius: 5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      border: 1px solid #666;
+      padding: 8px;
+      text-align: left;
+    }
+
+    .right {
+      text-align: right;
+    }
+
+    .firma {
+      margin-top: 50px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Liquidación de Sueldo</h1>
+
+  <!-- DATOS DEL EMPLEADO -->
+  <div class="bloque">
+    <strong>Nombre:</strong> {{ liquidacion.empleado.nombre }} <br>
+    <strong>RUT:</strong> {{ liquidacion.empleado.rut }} <br>
+    <strong>Email:</strong> {{ liquidacion.empleado.email }} <br>
+    <strong>Departamento:</strong> {{ liquidacion.empleado.departamento }} <br>
+    <strong>Rol:</strong> {{ liquidacion.empleado.rol }} <br>
+    <strong>Estado activo:</strong> {{ liquidacion.empleado.activo }} <br>
+  </div>
+
+  <!-- PERÍODO Y MONTOS -->
+  <div class="bloque">
+    <strong>Período:</strong> {{ liquidacion.periodo|date:"F Y" }} <br>
+    <strong>Monto total:</strong> ${{ liquidacion.monto_total }}
+  </div>
+
+  <!-- SOLO UN RESUMEN SIMPLE -->
+  <table>
+    <thead>
+      <tr>
+        <th>Concepto</th>
+        <th class="right">Monto</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Sueldo líquido</td>
+        <td class="right">${{ liquidacion.monto_total }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="firma">
+    ________________________________ <br>
+    {{ liquidacion.empleado.nombre }} <br>
+    Firma Trabajador
+  </div>
+
+</body>
+</html>

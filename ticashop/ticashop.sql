@@ -2,10 +2,10 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Servidor: 127.0.0.1
--- Tiempo de generación: 11-11-2025 a las 23:40:27
--- Versión del servidor: 11.4.8-MariaDB
--- Versión de PHP: 8.0.30
+-- Host: 127.0.0.1
+-- Generation Time: Nov 16, 2025 at 04:08 AM
+-- Server version: 12.0.2-MariaDB
+-- PHP Version: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,36 +18,36 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de datos: `ticashop`
+-- Database: `ticashop`
 --
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `apptica_comisionventa`
+-- Table structure for table `apptica_comisionventa`
 --
 
 CREATE TABLE `apptica_comisionventa` (
   `id` bigint(20) NOT NULL,
   `periodo` date NOT NULL,
-  `ventas_totales` decimal(16,2) NOT NULL,
-  `comision` decimal(16,2) NOT NULL,
-  `estado` varchar(10) NOT NULL,
+  `ventas_totales` decimal(14,2) NOT NULL,
+  `comision` decimal(14,2) DEFAULT NULL,
+  `estado` varchar(20) NOT NULL,
   `empleado_id` bigint(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
--- Volcado de datos para la tabla `apptica_comisionventa`
+-- Dumping data for table `apptica_comisionventa`
 --
 
 INSERT INTO `apptica_comisionventa` (`id`, `periodo`, `ventas_totales`, `comision`, `estado`, `empleado_id`) VALUES
-(2, '2025-11-01', 10000.00, 150.00, 'CALCULADA', 9),
-(3, '2025-10-31', 10000.00, 150.00, 'CALCULADA', 10);
+(6, '2025-11-15', 70000.00, 1050.00, 'CALCULADA', 3),
+(7, '2025-11-15', 9000.00, 135.00, 'CALCULADA', 1);
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `apptica_empleado`
+-- Table structure for table `apptica_empleado`
 --
 
 CREATE TABLE `apptica_empleado` (
@@ -62,19 +62,19 @@ CREATE TABLE `apptica_empleado` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
--- Volcado de datos para la tabla `apptica_empleado`
+-- Dumping data for table `apptica_empleado`
 --
 
 INSERT INTO `apptica_empleado` (`id`, `nombre`, `email`, `rut`, `rol`, `departamento`, `activo`, `saldo_vacaciones_dias`) VALUES
-(7, 'Victoria Carrasco', 'victoriac@gmail.com', '196476034', 'SUP_COM', 'FINANZAS', 1, 0),
-(8, 'Victoria Carrasco Cifuentes', 'victoriacarrascocc777@gmail.com', '196476031', 'ADMIN', 'OTRO', 1, 0),
-(9, 'Felipe Silva', 'felipe@inacap.cl', '12123123-3', 'GENERAL', 'OTRO', 1, 0),
-(10, 'Victoria Carrasco Cifuentes', 'victoriac123@gmail.com', '12.123.123-3', 'JEFATURA', 'RRHH', 1, 0);
+(1, 'Victoria', 'victoriacarrascocc@gmail.com', '19647603-2', 'ADMIN', 'RRHH', 1, 0),
+(2, 'Mariano', 'mariano@inacap.cl', '12345678-9', 'RRHH', 'RRHH', 1, 0),
+(3, 'Felipe Silva', 'felipe@gmail.com', '2000000-0', 'TECNICO', 'OTRO', 1, 0),
+(4, 'Matias Silva', 'mati@gmail.com', '11111111-1', 'SUP_COM', 'FINANZAS', 1, 0);
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `apptica_liquidacion`
+-- Table structure for table `apptica_liquidacion`
 --
 
 CREATE TABLE `apptica_liquidacion` (
@@ -83,23 +83,25 @@ CREATE TABLE `apptica_liquidacion` (
   `monto_total` decimal(14,2) NOT NULL,
   `estado` varchar(20) NOT NULL,
   `pdf` varchar(100) DEFAULT NULL,
-  `empleado_id` bigint(20) NOT NULL
+  `empleado_id` bigint(20) NOT NULL,
+  `comisiones` decimal(14,2) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
--- Volcado de datos para la tabla `apptica_liquidacion`
+-- Dumping data for table `apptica_liquidacion`
 --
 
-INSERT INTO `apptica_liquidacion` (`id`, `periodo`, `monto_total`, `estado`, `pdf`, `empleado_id`) VALUES
-(8, '2025-11-01', 1000000.00, 'PENDIENTE_FIRMA', '', 7),
-(9, '2025-11-01', 1000000.00, 'PENDIENTE_FIRMA', '', 8),
-(10, '2025-11-01', 1000000.00, 'PENDIENTE_FIRMA', '', 9),
-(11, '2025-11-01', 1000000.00, 'PENDIENTE_FIRMA', '', 10);
+INSERT INTO `apptica_liquidacion` (`id`, `periodo`, `monto_total`, `estado`, `pdf`, `empleado_id`, `comisiones`) VALUES
+(2, '2025-11-01', 1000000.00, 'PENDIENTE_FIRMA', '', 1, 135.00),
+(4, '2025-11-01', 1000000.00, 'PENDIENTE_FIRMA', '', 2, 0.00),
+(5, '2025-11-01', 1000000.00, 'PENDIENTE_FIRMA', '', 3, 1050.00),
+(7, '2025-11-15', 950000.00, 'True', NULL, 4, NULL),
+(8, '2025-11-01', 1000000.00, 'PENDIENTE_FIRMA', '', 4, 0.00);
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `apptica_registroasistencia`
+-- Table structure for table `apptica_registroasistencia`
 --
 
 CREATE TABLE `apptica_registroasistencia` (
@@ -111,17 +113,10 @@ CREATE TABLE `apptica_registroasistencia` (
   `empleado_id` bigint(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
---
--- Volcado de datos para la tabla `apptica_registroasistencia`
---
-
-INSERT INTO `apptica_registroasistencia` (`id`, `fecha`, `hora_entrada`, `hora_salida`, `estado`, `empleado_id`) VALUES
-(3, '2025-11-03', '08:00:00.003000', '19:00:00.758000', 'tardanza', 7);
-
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `apptica_solicitudvacacional`
+-- Table structure for table `apptica_solicitudvacacional`
 --
 
 CREATE TABLE `apptica_solicitudvacacional` (
@@ -137,7 +132,29 @@ CREATE TABLE `apptica_solicitudvacacional` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `auth_group`
+-- Table structure for table `apptica_venta`
+--
+
+CREATE TABLE `apptica_venta` (
+  `id` bigint(20) NOT NULL,
+  `fecha` date NOT NULL,
+  `monto` decimal(14,2) NOT NULL,
+  `empleado_id` bigint(20) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Dumping data for table `apptica_venta`
+--
+
+INSERT INTO `apptica_venta` (`id`, `fecha`, `monto`, `empleado_id`) VALUES
+(1, '2025-11-14', 10000.00, 2),
+(2, '2025-11-15', 1000000.00, 1),
+(10, '2025-11-15', 30000.00, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `auth_group`
 --
 
 CREATE TABLE `auth_group` (
@@ -148,7 +165,7 @@ CREATE TABLE `auth_group` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `auth_group_permissions`
+-- Table structure for table `auth_group_permissions`
 --
 
 CREATE TABLE `auth_group_permissions` (
@@ -160,7 +177,7 @@ CREATE TABLE `auth_group_permissions` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `auth_permission`
+-- Table structure for table `auth_permission`
 --
 
 CREATE TABLE `auth_permission` (
@@ -171,7 +188,7 @@ CREATE TABLE `auth_permission` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
--- Volcado de datos para la tabla `auth_permission`
+-- Dumping data for table `auth_permission`
 --
 
 INSERT INTO `auth_permission` (`id`, `name`, `content_type_id`, `codename`) VALUES
@@ -218,12 +235,16 @@ INSERT INTO `auth_permission` (`id`, `name`, `content_type_id`, `codename`) VALU
 (41, 'Can add solicitud vacacional', 11, 'add_solicitudvacacional'),
 (42, 'Can change solicitud vacacional', 11, 'change_solicitudvacacional'),
 (43, 'Can delete solicitud vacacional', 11, 'delete_solicitudvacacional'),
-(44, 'Can view solicitud vacacional', 11, 'view_solicitudvacacional');
+(44, 'Can view solicitud vacacional', 11, 'view_solicitudvacacional'),
+(45, 'Can add venta', 12, 'add_venta'),
+(46, 'Can change venta', 12, 'change_venta'),
+(47, 'Can delete venta', 12, 'delete_venta'),
+(48, 'Can view venta', 12, 'view_venta');
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `auth_user`
+-- Table structure for table `auth_user`
 --
 
 CREATE TABLE `auth_user` (
@@ -241,7 +262,7 @@ CREATE TABLE `auth_user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
--- Volcado de datos para la tabla `auth_user`
+-- Dumping data for table `auth_user`
 --
 
 INSERT INTO `auth_user` (`id`, `password`, `last_login`, `is_superuser`, `username`, `first_name`, `last_name`, `email`, `is_staff`, `is_active`, `date_joined`) VALUES
@@ -250,7 +271,7 @@ INSERT INTO `auth_user` (`id`, `password`, `last_login`, `is_superuser`, `userna
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `auth_user_groups`
+-- Table structure for table `auth_user_groups`
 --
 
 CREATE TABLE `auth_user_groups` (
@@ -262,7 +283,7 @@ CREATE TABLE `auth_user_groups` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `auth_user_user_permissions`
+-- Table structure for table `auth_user_user_permissions`
 --
 
 CREATE TABLE `auth_user_user_permissions` (
@@ -274,7 +295,7 @@ CREATE TABLE `auth_user_user_permissions` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `django_admin_log`
+-- Table structure for table `django_admin_log`
 --
 
 CREATE TABLE `django_admin_log` (
@@ -291,7 +312,7 @@ CREATE TABLE `django_admin_log` (
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `django_content_type`
+-- Table structure for table `django_content_type`
 --
 
 CREATE TABLE `django_content_type` (
@@ -301,7 +322,7 @@ CREATE TABLE `django_content_type` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
--- Volcado de datos para la tabla `django_content_type`
+-- Dumping data for table `django_content_type`
 --
 
 INSERT INTO `django_content_type` (`id`, `app_label`, `model`) VALUES
@@ -311,6 +332,7 @@ INSERT INTO `django_content_type` (`id`, `app_label`, `model`) VALUES
 (9, 'apptica', 'liquidacion'),
 (10, 'apptica', 'registroasistencia'),
 (11, 'apptica', 'solicitudvacacional'),
+(12, 'apptica', 'venta'),
 (3, 'auth', 'group'),
 (2, 'auth', 'permission'),
 (4, 'auth', 'user'),
@@ -320,7 +342,7 @@ INSERT INTO `django_content_type` (`id`, `app_label`, `model`) VALUES
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `django_migrations`
+-- Table structure for table `django_migrations`
 --
 
 CREATE TABLE `django_migrations` (
@@ -331,7 +353,7 @@ CREATE TABLE `django_migrations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
--- Volcado de datos para la tabla `django_migrations`
+-- Dumping data for table `django_migrations`
 --
 
 INSERT INTO `django_migrations` (`id`, `app`, `name`, `applied`) VALUES
@@ -353,12 +375,18 @@ INSERT INTO `django_migrations` (`id`, `app`, `name`, `applied`) VALUES
 (16, 'auth', '0010_alter_group_name_max_length', '2025-10-27 02:43:47.611182'),
 (17, 'auth', '0011_update_proxy_permissions', '2025-10-27 02:43:47.616182'),
 (18, 'auth', '0012_alter_user_first_name_max_length', '2025-10-27 02:43:47.634186'),
-(19, 'sessions', '0001_initial', '2025-10-27 02:43:47.657387');
+(19, 'sessions', '0001_initial', '2025-10-27 02:43:47.657387'),
+(20, 'apptica', '0002_liquidacion_comisiones', '2025-11-16 01:03:50.306241'),
+(21, 'apptica', '0003_venta', '2025-11-16 01:05:28.940451'),
+(22, 'apptica', '0004_alter_comisionventa_comision_and_more', '2025-11-16 01:27:12.224541'),
+(23, 'apptica', '0005_alter_comisionventa_comision_and_more', '2025-11-16 01:35:19.897153'),
+(24, 'apptica', '0006_alter_comisionventa_comision', '2025-11-16 01:39:55.670729'),
+(25, 'apptica', '0007_alter_liquidacion_comisiones_and_more', '2025-11-16 01:50:19.272208');
 
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `django_session`
+-- Table structure for table `django_session`
 --
 
 CREATE TABLE `django_session` (
@@ -368,25 +396,25 @@ CREATE TABLE `django_session` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
--- Volcado de datos para la tabla `django_session`
+-- Dumping data for table `django_session`
 --
 
 INSERT INTO `django_session` (`session_key`, `session_data`, `expire_date`) VALUES
 ('gcy7odajeqcm9n5u2plq8ztwves1232n', '.eJxVjDsOwjAQBe_iGllO_KekzxmsXa-NA8iW4qRC3J1ESgHtm5n3ZgG2tYStpyXMxK5sYJffDSE-Uz0APaDeG4-trsuM_FD4STufGqXX7XT_Dgr0stcWnfIgvbFi9DqDy44EGp2M8hKEl8khDtE5O2YQu6C8TVoCSIpkCdnnC9HOOBo:1vDDLK:v1C_YVExV2U2bOZVmvsiW-jmnC1qSJoxUL4e9Q9Bxi0', '2025-11-10 02:52:22.307751');
 
 --
--- Índices para tablas volcadas
+-- Indexes for dumped tables
 --
 
 --
--- Indices de la tabla `apptica_comisionventa`
+-- Indexes for table `apptica_comisionventa`
 --
 ALTER TABLE `apptica_comisionventa`
   ADD PRIMARY KEY (`id`),
   ADD KEY `apptica_comisionvent_empleado_id_4ebb329f_fk_apptica_e` (`empleado_id`);
 
 --
--- Indices de la tabla `apptica_empleado`
+-- Indexes for table `apptica_empleado`
 --
 ALTER TABLE `apptica_empleado`
   ADD PRIMARY KEY (`id`),
@@ -394,35 +422,42 @@ ALTER TABLE `apptica_empleado`
   ADD UNIQUE KEY `rut` (`rut`);
 
 --
--- Indices de la tabla `apptica_liquidacion`
+-- Indexes for table `apptica_liquidacion`
 --
 ALTER TABLE `apptica_liquidacion`
   ADD PRIMARY KEY (`id`),
   ADD KEY `apptica_liquidacion_empleado_id_bbd70ba8_fk_apptica_empleado_id` (`empleado_id`);
 
 --
--- Indices de la tabla `apptica_registroasistencia`
+-- Indexes for table `apptica_registroasistencia`
 --
 ALTER TABLE `apptica_registroasistencia`
   ADD PRIMARY KEY (`id`),
   ADD KEY `apptica_registroasis_empleado_id_755d8f71_fk_apptica_e` (`empleado_id`);
 
 --
--- Indices de la tabla `apptica_solicitudvacacional`
+-- Indexes for table `apptica_solicitudvacacional`
 --
 ALTER TABLE `apptica_solicitudvacacional`
   ADD PRIMARY KEY (`id`),
   ADD KEY `apptica_solicitudvac_empleado_id_255ec1c4_fk_apptica_e` (`empleado_id`);
 
 --
--- Indices de la tabla `auth_group`
+-- Indexes for table `apptica_venta`
+--
+ALTER TABLE `apptica_venta`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `apptica_venta_empleado_id_c62b6d72_fk_apptica_empleado_id` (`empleado_id`);
+
+--
+-- Indexes for table `auth_group`
 --
 ALTER TABLE `auth_group`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `name` (`name`);
 
 --
--- Indices de la tabla `auth_group_permissions`
+-- Indexes for table `auth_group_permissions`
 --
 ALTER TABLE `auth_group_permissions`
   ADD PRIMARY KEY (`id`),
@@ -430,21 +465,21 @@ ALTER TABLE `auth_group_permissions`
   ADD KEY `auth_group_permissio_permission_id_84c5c92e_fk_auth_perm` (`permission_id`);
 
 --
--- Indices de la tabla `auth_permission`
+-- Indexes for table `auth_permission`
 --
 ALTER TABLE `auth_permission`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `auth_permission_content_type_id_codename_01ab375a_uniq` (`content_type_id`,`codename`);
 
 --
--- Indices de la tabla `auth_user`
+-- Indexes for table `auth_user`
 --
 ALTER TABLE `auth_user`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `username` (`username`);
 
 --
--- Indices de la tabla `auth_user_groups`
+-- Indexes for table `auth_user_groups`
 --
 ALTER TABLE `auth_user_groups`
   ADD PRIMARY KEY (`id`),
@@ -452,7 +487,7 @@ ALTER TABLE `auth_user_groups`
   ADD KEY `auth_user_groups_group_id_97559544_fk_auth_group_id` (`group_id`);
 
 --
--- Indices de la tabla `auth_user_user_permissions`
+-- Indexes for table `auth_user_user_permissions`
 --
 ALTER TABLE `auth_user_user_permissions`
   ADD PRIMARY KEY (`id`),
@@ -460,7 +495,7 @@ ALTER TABLE `auth_user_user_permissions`
   ADD KEY `auth_user_user_permi_permission_id_1fbb5f2c_fk_auth_perm` (`permission_id`);
 
 --
--- Indices de la tabla `django_admin_log`
+-- Indexes for table `django_admin_log`
 --
 ALTER TABLE `django_admin_log`
   ADD PRIMARY KEY (`id`),
@@ -468,170 +503,182 @@ ALTER TABLE `django_admin_log`
   ADD KEY `django_admin_log_user_id_c564eba6_fk_auth_user_id` (`user_id`);
 
 --
--- Indices de la tabla `django_content_type`
+-- Indexes for table `django_content_type`
 --
 ALTER TABLE `django_content_type`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `django_content_type_app_label_model_76bd3d3b_uniq` (`app_label`,`model`);
 
 --
--- Indices de la tabla `django_migrations`
+-- Indexes for table `django_migrations`
 --
 ALTER TABLE `django_migrations`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indices de la tabla `django_session`
+-- Indexes for table `django_session`
 --
 ALTER TABLE `django_session`
   ADD PRIMARY KEY (`session_key`),
   ADD KEY `django_session_expire_date_a5c62663` (`expire_date`);
 
 --
--- AUTO_INCREMENT de las tablas volcadas
+-- AUTO_INCREMENT for dumped tables
 --
 
 --
--- AUTO_INCREMENT de la tabla `apptica_comisionventa`
+-- AUTO_INCREMENT for table `apptica_comisionventa`
 --
 ALTER TABLE `apptica_comisionventa`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
--- AUTO_INCREMENT de la tabla `apptica_empleado`
---
-ALTER TABLE `apptica_empleado`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
-
---
--- AUTO_INCREMENT de la tabla `apptica_liquidacion`
---
-ALTER TABLE `apptica_liquidacion`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
-
---
--- AUTO_INCREMENT de la tabla `apptica_registroasistencia`
---
-ALTER TABLE `apptica_registroasistencia`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
--- AUTO_INCREMENT de la tabla `apptica_solicitudvacacional`
---
-ALTER TABLE `apptica_solicitudvacacional`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
--- AUTO_INCREMENT de la tabla `auth_group`
+-- AUTO_INCREMENT for table `apptica_empleado`
+--
+ALTER TABLE `apptica_empleado`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `apptica_liquidacion`
+--
+ALTER TABLE `apptica_liquidacion`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT for table `apptica_registroasistencia`
+--
+ALTER TABLE `apptica_registroasistencia`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `apptica_solicitudvacacional`
+--
+ALTER TABLE `apptica_solicitudvacacional`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `apptica_venta`
+--
+ALTER TABLE `apptica_venta`
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+
+--
+-- AUTO_INCREMENT for table `auth_group`
 --
 ALTER TABLE `auth_group`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de la tabla `auth_group_permissions`
+-- AUTO_INCREMENT for table `auth_group_permissions`
 --
 ALTER TABLE `auth_group_permissions`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de la tabla `auth_permission`
+-- AUTO_INCREMENT for table `auth_permission`
 --
 ALTER TABLE `auth_permission`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
 
 --
--- AUTO_INCREMENT de la tabla `auth_user`
+-- AUTO_INCREMENT for table `auth_user`
 --
 ALTER TABLE `auth_user`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT de la tabla `auth_user_groups`
+-- AUTO_INCREMENT for table `auth_user_groups`
 --
 ALTER TABLE `auth_user_groups`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de la tabla `auth_user_user_permissions`
+-- AUTO_INCREMENT for table `auth_user_user_permissions`
 --
 ALTER TABLE `auth_user_user_permissions`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de la tabla `django_admin_log`
+-- AUTO_INCREMENT for table `django_admin_log`
 --
 ALTER TABLE `django_admin_log`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de la tabla `django_content_type`
+-- AUTO_INCREMENT for table `django_content_type`
 --
 ALTER TABLE `django_content_type`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
--- AUTO_INCREMENT de la tabla `django_migrations`
+-- AUTO_INCREMENT for table `django_migrations`
 --
 ALTER TABLE `django_migrations`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
--- Restricciones para tablas volcadas
+-- Constraints for dumped tables
 --
 
 --
--- Filtros para la tabla `apptica_comisionventa`
+-- Constraints for table `apptica_comisionventa`
 --
 ALTER TABLE `apptica_comisionventa`
   ADD CONSTRAINT `apptica_comisionvent_empleado_id_4ebb329f_fk_apptica_e` FOREIGN KEY (`empleado_id`) REFERENCES `apptica_empleado` (`id`);
 
 --
--- Filtros para la tabla `apptica_liquidacion`
+-- Constraints for table `apptica_liquidacion`
 --
 ALTER TABLE `apptica_liquidacion`
   ADD CONSTRAINT `apptica_liquidacion_empleado_id_bbd70ba8_fk_apptica_empleado_id` FOREIGN KEY (`empleado_id`) REFERENCES `apptica_empleado` (`id`);
 
 --
--- Filtros para la tabla `apptica_registroasistencia`
+-- Constraints for table `apptica_registroasistencia`
 --
 ALTER TABLE `apptica_registroasistencia`
   ADD CONSTRAINT `apptica_registroasis_empleado_id_755d8f71_fk_apptica_e` FOREIGN KEY (`empleado_id`) REFERENCES `apptica_empleado` (`id`);
 
 --
--- Filtros para la tabla `apptica_solicitudvacacional`
+-- Constraints for table `apptica_solicitudvacacional`
 --
 ALTER TABLE `apptica_solicitudvacacional`
   ADD CONSTRAINT `apptica_solicitudvac_empleado_id_255ec1c4_fk_apptica_e` FOREIGN KEY (`empleado_id`) REFERENCES `apptica_empleado` (`id`);
 
 --
--- Filtros para la tabla `auth_group_permissions`
+-- Constraints for table `apptica_venta`
+--
+ALTER TABLE `apptica_venta`
+  ADD CONSTRAINT `apptica_venta_empleado_id_c62b6d72_fk_apptica_empleado_id` FOREIGN KEY (`empleado_id`) REFERENCES `apptica_empleado` (`id`);
+
+--
+-- Constraints for table `auth_group_permissions`
 --
 ALTER TABLE `auth_group_permissions`
   ADD CONSTRAINT `auth_group_permissio_permission_id_84c5c92e_fk_auth_perm` FOREIGN KEY (`permission_id`) REFERENCES `auth_permission` (`id`),
   ADD CONSTRAINT `auth_group_permissions_group_id_b120cbf9_fk_auth_group_id` FOREIGN KEY (`group_id`) REFERENCES `auth_group` (`id`);
 
 --
--- Filtros para la tabla `auth_permission`
+-- Constraints for table `auth_permission`
 --
 ALTER TABLE `auth_permission`
   ADD CONSTRAINT `auth_permission_content_type_id_2f476e4b_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`);
 
 --
--- Filtros para la tabla `auth_user_groups`
+-- Constraints for table `auth_user_groups`
 --
 ALTER TABLE `auth_user_groups`
   ADD CONSTRAINT `auth_user_groups_group_id_97559544_fk_auth_group_id` FOREIGN KEY (`group_id`) REFERENCES `auth_group` (`id`),
   ADD CONSTRAINT `auth_user_groups_user_id_6a12ed8b_fk_auth_user_id` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`);
 
 --
--- Filtros para la tabla `auth_user_user_permissions`
+-- Constraints for table `auth_user_user_permissions`
 --
 ALTER TABLE `auth_user_user_permissions`
   ADD CONSTRAINT `auth_user_user_permi_permission_id_1fbb5f2c_fk_auth_perm` FOREIGN KEY (`permission_id`) REFERENCES `auth_permission` (`id`),
   ADD CONSTRAINT `auth_user_user_permissions_user_id_a95ead1b_fk_auth_user_id` FOREIGN KEY (`user_id`) REFERENCES `auth_user` (`id`);
 
 --
--- Filtros para la tabla `django_admin_log`
+-- Constraints for table `django_admin_log`
 --
 ALTER TABLE `django_admin_log`
   ADD CONSTRAINT `django_admin_log_content_type_id_c4bce8eb_fk_django_co` FOREIGN KEY (`content_type_id`) REFERENCES `django_content_type` (`id`),

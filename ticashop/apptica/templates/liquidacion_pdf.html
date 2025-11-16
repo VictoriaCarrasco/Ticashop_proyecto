@@ -5,67 +5,98 @@
   <title>Liquidación de sueldo</title>
   <style>
     body {
-      font-family: sans-serif;
-      font-size: 13px;
+      font-family: Arial, sans-serif;
+      font-size: 11pt;
       color: #333;
     }
-
     h1 {
       text-align: center;
       margin-bottom: 20px;
     }
-
-    .bloque {
-      margin-bottom: 20px;
-      padding: 10px;
+    .box {
       border: 1px solid #999;
-      border-radius: 5px;
+      padding: 12px;
+      margin: 0 20px 18px 20px;
     }
-
+    .label {
+      font-weight: bold;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 5px;
     }
-
     th, td {
-      border: 1px solid #666;
+      border: 1px solid #999;
       padding: 8px;
-      text-align: left;
+      vertical-align: top;
     }
-
+    th {
+      text-align: left;
+      background-color: #f5f5f5;
+    }
+    .no-border td {
+      border: none;
+      padding: 4px 8px;
+    }
     .right {
       text-align: right;
     }
-
     .firma {
-      margin-top: 50px;
+      margin-top: 40px;
       text-align: center;
+    }
+    .firma-linea {
+      border-top: 1px solid #000;
+      width: 250px;
+      margin: 0 auto 5px auto;
     }
   </style>
 </head>
-
 <body>
 
-  <h1>Liquidación de Sueldo</h1>
+<h1>Liquidación de Sueldo</h1>
 
-  <!-- DATOS DEL EMPLEADO -->
-  <div class="bloque">
-    <strong>Nombre:</strong> {{ liquidacion.empleado.nombre }} <br>
-    <strong>RUT:</strong> {{ liquidacion.empleado.rut }} <br>
-    <strong>Email:</strong> {{ liquidacion.empleado.email }} <br>
-    <strong>Departamento:</strong> {{ liquidacion.empleado.departamento }} <br>
-    <strong>Rol:</strong> {{ liquidacion.empleado.rol }} <br>
-    <strong>Estado activo:</strong> {{ liquidacion.empleado.activo }} <br>
-  </div>
+<!-- FILA: DATOS TRABAJADOR + DESCUENTOS LEGALES -->
+<div class="box">
+  <table class="no-border">
+    <tr>
+      <!-- Columna izquierda: trabajador -->
+      <td style="width: 50%;">
+        <p><span class="label">Nombre:</span> {{ liquidacion.empleado.nombre }}</p>
+        <p><span class="label">RUT:</span> {{ liquidacion.empleado.rut }}</p>
+        <p><span class="label">Email:</span> {{ liquidacion.empleado.email }}</p>
+        <p><span class="label">Departamento:</span> {{ liquidacion.empleado.departamento }}</p>
+        <p><span class="label">Rol:</span> {{ liquidacion.empleado.rol }}</p>
+        <p><span class="label">Estado activo:</span> {{ liquidacion.empleado.activo }}</p>
+      </td>
 
-  <!-- PERÍODO Y MONTOS -->
-  <div class="bloque">
-    <strong>Período:</strong> {{ liquidacion.periodo|date:"F Y" }} <br>
-    <strong>Monto total:</strong> ${{ liquidacion.monto_total }}
-  </div>
+      <!-- Columna derecha: descuentos legales -->
+      <td style="width: 50%;">
+        <p><span class="label">Descuentos legales</span></p>
+        <p>AFP Provida (10% imponible): ${{ afp|floatformat:0 }}</p>
+        <p>Fonasa (7% imponible): ${{ salud|floatformat:0 }}</p>
+        <p>Seguro cesantía (0,6% imponible): ${{ seguro|floatformat:0 }}</p>
+        <p>Impuesto único (simplificado): ${{ impuesto|floatformat:0 }}</p>
+        <p><span class="label">Total descuentos:</span> ${{ total_descuentos|floatformat:0 }}</p>
+      </td>
+    </tr>
+  </table>
+</div>
 
-  <!-- SOLO UN RESUMEN SIMPLE -->
+<!-- RESUMEN DEL PERÍODO Y HABERES -->
+<div class="box">
+  <p><span class="label">Período:</span> {{ liquidacion.periodo|date:"F Y" }}</p>
+  <p><span class="label">Sueldo base:</span> ${{ sueldo_base|floatformat:0 }}</p>
+  <p><span class="label">Gratificación legal (25% sueldo base):</span> ${{ gratificacion|floatformat:0 }}</p>
+  <p><span class="label">Comisiones (1,5% sueldo base):</span> ${{ comisiones|floatformat:0 }}</p>
+  <p><span class="label">Total haberes imponibles:</span> ${{ imponible|floatformat:0 }}</p>
+  <br>
+  <p><span class="label">Líquido a pago:</span> ${{ liquido|floatformat:0 }}</p>
+</div>
+
+<!-- TABLA RESUMEN (como en tu imagen) -->
+<div class="box">
   <table>
     <thead>
       <tr>
@@ -76,16 +107,18 @@
     <tbody>
       <tr>
         <td>Sueldo líquido</td>
-        <td class="right">${{ liquidacion.monto_total }}</td>
+        <td class="right">${{ liquido|floatformat:0 }}</td>
       </tr>
     </tbody>
   </table>
+</div>
 
-  <div class="firma">
-    ________________________________ <br>
-    {{ liquidacion.empleado.nombre }} <br>
-    Firma Trabajador
-  </div>
+<!-- FIRMA -->
+<div class="firma">
+  <div class="firma-linea"></div>
+  <div>{{ liquidacion.empleado.nombre }}</div>
+  <div>Firma Trabajador</div>
+</div>
 
 </body>
 </html>

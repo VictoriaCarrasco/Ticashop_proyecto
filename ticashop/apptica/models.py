@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from decimal import Decimal
 
 
 # ====== Catálogos simples ======
@@ -59,25 +60,59 @@ class SolicitudVacacional(models.Model):
 # ====== Liquidaciones ======
 class Liquidacion(models.Model):
     empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE)
-    periodo = models.DateField(help_text="Usa el primer día del mes, ej: 2025-10-01")
+    periodo = models.DateField(help_text="Usa el primer día del mes, ej: 2025-11-01")
     monto_total = models.DecimalField(max_digits=14, decimal_places=2)
     estado = models.CharField(max_length=20, choices=ESTADO_LIQ, default="PENDIENTE_FIRMA")
-    pdf = models.FileField(upload_to="liquidaciones/", blank=True, null=True)  # para “Descargar PDF”
+    pdf = models.FileField(upload_to="liquidaciones/", blank=True, null=True)
+    comisiones = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=0,
+        blank=True,
+        null=True,   # opcional, para que no sea obligatorio
+    )
 
     def __str__(self):
         return f"Liquidación {self.empleado.nombre} · {self.periodo}"
 
 
 # ====== Comisiones ======
+
 class ComisionVenta(models.Model):
-    empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE)
+    empleado = models.ForeignKey('Empleado', on_delete=models.CASCADE)
     periodo = models.DateField()
-    ventas_totales = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    comision = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    estado = models.CharField(max_length=10, choices=ESTADO_COM, default="PENDIENTE")
+    ventas_totales = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+
+    # 👇 la columna existe en la BD, pero la vamos a rellenar nosotros
+    comision = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        default=0,
+        blank=True,
+        null=True,   # permite que llegue vacía desde phpMyAdmin
+    )
+
+    estado = models.CharField(max_length=20, default="CALCULADA", blank=True)
+
+    COMISION_PORCENTAJE = Decimal("0.015")  # 1,5%
+
+    def save(self, *args, **kwargs):
+        # si no hay ventas_totales, dejamos 0
+        if self.ventas_totales is None:
+            self.ventas_totales = Decimal("0")
+
+        # 💡 AQUÍ va tu fórmula:
+        # comision = ventas_totales * 0.015
+        self.comision = self.ventas_totales * self.COMISION_PORCENTAJE
+
+        if not self.estado:
+            self.estado = "CALCULADA"
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Comisión {self.empleado.nombre} · {self.periodo}"
+        return f"{self.empleado} · {self.periodo} · ventas={self.ventas_totales} · com={self.comision}"
+
 
 
 # ====== Asistencia ======
@@ -95,3 +130,14 @@ class RegistroAsistencia(models.Model):
 
     def __str__(self):
         return f"Asistencia {self.empleado.nombre} · {self.fecha} · {self.estado}"
+
+
+
+# ====== Ventas ======
+
+class Venta(models.Model):
+    empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE)
+    fecha = models.DateField()
+    monto = models.DecimalField(max_digits=14, decimal_places=2)
+    
+

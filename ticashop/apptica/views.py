@@ -10,6 +10,7 @@ from django.template.loader import render_to_string
 from io import BytesIO
 from django.template.loader import get_template
 from xhtml2pdf import pisa
+from .models import Liquidacion, Empleado, Venta, ComisionVenta
 
 
 from .forms import EmpleadoForm
@@ -99,13 +100,11 @@ def vacaciones_rechazar(request, pk: int):
 # ===========================
 # Liquidaciones
 # ===========================
-# ===========================
-# Liquidaciones
-# ===========================
 
 def render_to_pdf(template_src, context_dict=None):
     """
     Renderiza una plantilla HTML a PDF usando xhtml2pdf.
+    Devuelve bytes o None si hay error.
     """
     if context_dict is None:
         context_dict = {}
@@ -120,9 +119,13 @@ def render_to_pdf(template_src, context_dict=None):
         encoding="UTF-8"
     )
 
-    if not pdf.err:
-        return result.getvalue()
-    return None
+    if pdf.err:
+        # Si hay error, devolvemos None
+        return None
+
+    return result.getvalue()
+
+
 
 
 def liquidaciones_list(request):
@@ -131,19 +134,42 @@ def liquidaciones_list(request):
 
 
 def liquidaciones_generar(request):
-    # DEMO: genera liquidaciones del mes actual para todos los empleados que no tengan
-    periodo = date(timezone.now().year, timezone.now().month, 1)
+    # Usamos el primer día del mes como "periodo" de la liquidación
+    hoy = timezone.now()
+    periodo = date(hoy.year, hoy.month, 1)
+
     empleados = Empleado.objects.all()
     creadas = 0
+
+    SUELDO_BASE_DEMO = Decimal("1000000.00")  # lo que estás usando como sueldo base
+
     for e in empleados:
-        obj, created = Liquidacion.objects.get_or_create(
-            empleado=e, periodo=periodo,
-            defaults=dict(monto_total=Decimal("1000000.00"), estado="PENDIENTE_FIRMA")
+        # 1) Buscamos la comisión de ventas para este empleado y este mes
+        comision_reg = ComisionVenta.objects.filter(
+            empleado=e,
+            periodo__year=periodo.year,
+            periodo__month=periodo.month,
+        ).order_by("-id").first()
+
+        comision = comision_reg.comision if comision_reg else Decimal("0")
+
+        # 2) Creamos o actualizamos la liquidación con esa comisión
+        obj, created = Liquidacion.objects.update_or_create(
+            empleado=e,
+            periodo=periodo,
+            defaults={
+                "monto_total": SUELDO_BASE_DEMO,
+                "estado": "PENDIENTE_FIRMA",
+                "comisiones": comision,  # 👈 AQUÍ guardamos la comisión calculada
+            },
         )
+
         if created:
             creadas += 1
-    messages.success(request, f"Se generaron {creadas} liquidaciones (si faltaban).")
+
+    messages.success(request, f"Se generaron/actualizaron {creadas} liquidaciones.")
     return redirect("liquidaciones_list")
+
 
 
 def liquidaciones_detalle(request, pk: int):
@@ -158,22 +184,47 @@ def liquidacion_pdf(request, pk: int):
         pk=pk
     )
 
-    pdf_bytes = render_to_pdf("liquidacion_pdf.html", {
-        "liquidacion": liquidacion,
-    })
+    sueldo_base = liquidacion.monto_total
+    comisiones = liquidacion.comisiones or Decimal("0")
 
+    GRAT_RATE = Decimal("0.25")
+    gratificacion = sueldo_base * GRAT_RATE
+
+    imponible = sueldo_base + gratificacion + comisiones
+    AFP_RATE = Decimal("0.10")
+    SALUD_RATE = Decimal("0.07")
+    SEGURO_RATE = Decimal("0.006")
+
+    afp = imponible * AFP_RATE
+    salud = imponible * SALUD_RATE
+    seguro = imponible * SEGURO_RATE
+    impuesto = Decimal("0")
+
+    total_descuentos = afp + salud + seguro + impuesto
+    liquido = imponible - total_descuentos
+
+    context = {
+        "liquidacion": liquidacion,
+        "sueldo_base": sueldo_base,
+        "gratificacion": gratificacion,
+        "comisiones": comisiones,     # 👈 viene del modelo
+        "imponible": imponible,
+        "afp": afp,
+        "salud": salud,
+        "seguro": seguro,
+        "impuesto": impuesto,
+        "total_descuentos": total_descuentos,
+        "liquido": liquido,
+    }
+
+    pdf_bytes = render_to_pdf("liquidacion_pdf.html", context)
     if pdf_bytes is None:
         return HttpResponse("Error al generar el PDF", status=500)
 
-    filename = f"liquidacion_{liquidacion.empleado.rut}_{liquidacion.periodo}.pdf"
-
+    filename = f"liquidacion_{liquidacion.empleado.rut}_{liquido:.0f}.pdf"
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
-    response["Content-Disposition"] = f'attachment; filename="{filename}"'
-
+    response["Content-Disposition"] = f'attachment; filename=\"{filename}\"'
     return response
-
-
-
 
 
 

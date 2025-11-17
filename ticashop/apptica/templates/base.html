@@ -5,11 +5,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Dashboard RRHH{% endblock %}</title>
+
   <link rel="stylesheet" href="{% static 'css/main.css' %}?v=4">
+
   {% block head %}{% endblock %}
-
-
+  {% block extra_css %}{% endblock %}
 </head>
+
 <body>
 
   <div class="layout">
@@ -22,8 +24,21 @@
         <a href="{% url 'liquidaciones_list' %}"  data-ruta="{% url 'liquidaciones_list' %}">Liquidaciones</a>
         <a href="{% url 'comisiones_list' %}"     data-ruta="{% url 'comisiones_list' %}">Comisiones</a>
         <a href="{% url 'asistencia_list' %}"     data-ruta="{% url 'asistencia_list' %}">Asistencia</a>
-        <a href="{% url 'usuarios_list' %}"       data-ruta="{% url 'usuarios_list' %}">Usuarios</a>
+        <a href="{% url 'admin_home' %}">Administración</a>
       </nav>
+
+      {% if request.user.is_authenticated %}
+        <div style="padding: 8px; font-size: 12px;">
+          Sesión: {{ request.user.email }}<br>
+
+          {% if empleado_actual %}
+            Rol: {{ empleado_actual.rol }}<br>
+            Departamento: {{ empleado_actual.departamento }}<br>
+          {% endif %}
+
+          <a href="{% url 'logout_empleado' %}">Cerrar sesión</a>
+        </div>
+      {% endif %}
     </aside>
 
     <!-- CONTENIDO -->

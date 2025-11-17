@@ -11,6 +11,11 @@ from io import BytesIO
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 from .models import Liquidacion, Empleado, Venta, ComisionVenta
+from django.contrib.auth import login, logout
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.hashers import make_password
+from .decorators import validar_rol
 
 
 from .forms import EmpleadoForm
@@ -25,6 +30,7 @@ from .models import (
 # ===========================
 # Dashboard
 # ===========================
+@login_required
 def dashboard(request):
     hoy = timezone.localdate()
     total_empleados = Empleado.objects.count()
@@ -46,6 +52,8 @@ def dashboard(request):
 # ===========================
 # Vacaciones
 # ===========================
+@login_required
+@validar_rol(["ADMIN", "NOMINA", "SUP_COM", "VENDEDOR", "RRHH"])
 def vacaciones_list(request):
     qs = (SolicitudVacacional.objects
           .select_related("empleado")
@@ -78,6 +86,7 @@ def vacaciones_detalle(request, pk: int):
     # Reutilizamos la tabla y resaltamos la fila, o crea un template detalle si lo prefieres
     return render(request, "vacaciones_list.html", {"solicitudes": [v]})
 
+@validar_rol(["ADMIN", "RRHH"])
 def vacaciones_aprobar(request, pk: int):
     if request.method != "GET":
         return HttpResponseNotAllowed(["GET"])
@@ -127,7 +136,8 @@ def render_to_pdf(template_src, context_dict=None):
 
 
 
-
+@login_required
+@validar_rol(["ADMIN", "NOMINA"])
 def liquidaciones_list(request):
     qs = Liquidacion.objects.select_related("empleado").order_by("-periodo", "-id")
     return render(request, "liquidaciones_list.html", {"liquidaciones": qs})
@@ -231,6 +241,7 @@ def liquidacion_pdf(request, pk: int):
 # ===========================
 # Comisiones
 # ===========================
+@validar_rol(["SUP_COM"])
 def comisiones_list(request):
     qs = ComisionVenta.objects.select_related("empleado").order_by("-periodo", "-id")
     return render(request, "comisiones.html", {"comisiones": qs})
@@ -264,6 +275,7 @@ def comisiones_detalle(request, pk: int):
 # ===========================
 # Asistencia
 # ===========================
+@validar_rol(["ADMIN", "NOMINA", "SUP_COM", "VENDEDOR", "RRHH"])
 def asistencia_list(request):
     qs = RegistroAsistencia.objects.select_related("empleado").order_by("-fecha", "empleado__nombre")
 
@@ -296,9 +308,13 @@ def asistencia_export(request):
 # ===========================
 # Usuarios (Empleados)
 # ===========================
+@login_required
 def usuarios_list(request):
-    qs = Empleado.objects.all().order_by("nombre")
-    return render(request, "usuarios_list.html", {"usuarios": qs})
+    if not request.user.is_staff:
+        return redirect("dashboard")
+
+    usuarios = User.objects.all().order_by("id")
+    return render(request, "admin/usuarios_list.html", {"usuarios": usuarios})
 
 def usuarios_new(request):
     if request.method == "POST":
@@ -342,3 +358,127 @@ def usuarios_export(request):
     for r in qs:
         resp.write(",".join([str(x) for x in r]) + "\n")
     return resp
+
+
+def login_empleado(request):
+    """
+    Login usando:
+    - RUT desde apptica_empleado
+    - Contraseña desde auth_user (user.password)
+    Vinculando por el email del empleado.
+    """
+    if request.method == "POST":
+        rut = request.POST.get("rut", "").strip()
+        password = request.POST.get("password", "")
+
+        if not rut or not password:
+            messages.error(request, "Debes ingresar RUT y contraseña.")
+            return render(request, "login.html")
+
+        # 1) Buscar empleado por RUT
+        try:
+            empleado = Empleado.objects.get(rut=rut, activo=True)
+        except Empleado.DoesNotExist:
+            messages.error(request, "RUT no encontrado o empleado inactivo.")
+            return render(request, "login.html")
+
+        # 2) Buscar usuario Django por email del empleado
+        try:
+            user = User.objects.get(email=empleado.email, is_active=True)
+        except User.DoesNotExist:
+            messages.error(
+                request,
+                "No hay un usuario del sistema asociado al correo de este empleado."
+            )
+            return render(request, "login.html")
+
+        # 3) Validar contraseña contra user.password
+        if not user.check_password(password):
+            messages.error(request, "Contraseña incorrecta.")
+            return render(request, "login.html")
+
+        # 4) Hacer login y guardar info de empleado en sesión (opcional)
+        login(request, user)
+        request.session["empleado_id"] = empleado.id
+        request.session["empleado_nombre"] = empleado.nombre
+        request.session["empleado_rut"] = empleado.rut
+        request.session["empleado_rol"] = empleado.rol
+
+        return redirect("dashboard")
+
+    # Si es GET, solo mostramos el formulario
+    return render(request, "login.html")
+
+
+def logout_empleado(request):
+    logout(request)
+    return redirect("login_empleado")
+
+
+@login_required
+def admin_home(request):
+    # Solo staff puede ver el panel de administración
+    if not request.user.is_staff:
+        return redirect("dashboard")
+    return render(request, "admin/admin_home.html")
+
+@login_required
+def admin_usuarios_list(request):
+    if not request.user.is_staff:
+        return redirect("dashboard")
+
+    usuarios = User.objects.all().order_by("id")
+    return render(request, "admin/usuarios_list.html", {"usuarios": usuarios})
+
+
+@login_required
+def empleados_list(request):
+    if not request.user.is_staff:
+        return redirect("dashboard")
+
+    empleados = Empleado.objects.all().order_by("id")
+    return render(request, "admin/empleados_list.html", {"empleados": empleados})
+
+
+@login_required
+def crear_usuario_empleado(request):
+    if not request.user.is_staff:
+        return redirect("dashboard")
+
+    if request.method == "POST":
+        nombre = request.POST["nombre"]
+        email = request.POST["email"]
+        rut = request.POST["rut"]
+        rol = request.POST["rol"]
+        departamento = request.POST["departamento"]
+        password = request.POST["password"]
+
+        # Crear usuario Django
+        user = User.objects.create(
+            username=email.split("@")[0],
+            email=email,
+            password=make_password(password),
+            is_active=True,
+            is_staff=True,
+        )
+
+        # Crear empleado
+        Empleado.objects.create(
+            nombre=nombre,
+            email=email,
+            rut=rut,
+            rol=rol,
+            departamento=departamento,
+            activo=True,
+        )
+
+        messages.success(request, "Usuario y empleado creados correctamente.")
+        return redirect("admin_home")
+
+    return render(request, "admin/crear_usuario_empleado.html")
+
+
+@login_required
+def usuario_create(request):
+    # Reutilizamos el mismo formulario unificado
+    return crear_usuario_empleado(request)

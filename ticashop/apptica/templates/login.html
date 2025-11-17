@@ -1,0 +1,76 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Login Empleado · RRHH</title>
+  <link rel="stylesheet" href="{% static 'css/main.css' %}?v=4">
+  <style>
+    /* Si quieres, algo simple para centrar el login */
+    .login-container {
+      max-width: 400px;
+      margin: 80px auto;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.1);
+      background: #fff;
+    }
+    .login-container h1 {
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .login-container label {
+      display: block;
+      margin-top: 8px;
+      font-weight: 600;
+    }
+    .login-container input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      box-sizing: border-box;
+    }
+    .login-container button {
+      margin-top: 16px;
+      width: 100%;
+      padding: 10px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .messages {
+      margin-bottom: 8px;
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <h1>Ingreso Empleados</h1>
+
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <label for="id_rut">RUT</label>
+      <input type="text" name="rut" id="id_rut" placeholder="11.111.111-1">
+
+      <label for="id_password">Contraseña</label>
+      <input type="password" name="password" id="id_password" placeholder="********">
+
+      <button type="submit">Ingresar</button>
+    </form>
+
+    <p style="margin-top:12px; font-size: 12px; text-align:center;">
+      ¿Eres administrador? <a href="/admin/">Ir al admin</a>
+    </p>
+  </div>
+
+</body>
+</html>

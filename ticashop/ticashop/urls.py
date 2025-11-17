@@ -3,9 +3,10 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('apptica.urls')),   # ← usa las rutas de tu app
+    path('admin/', include('apptica.admin_urls')),   # <--- tu panel
+    path('', include('apptica.urls')),              # rutas normales
 ]
 
 # Servir estáticos y media en desarrollo

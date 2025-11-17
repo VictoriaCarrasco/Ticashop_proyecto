@@ -1,0 +1,275 @@
+/* Título de la página */
+.admin-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 30px;
+    color: #1a1a1a;
+}
+
+/* Contenedor de tarjetas */
+.admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 22px;
+    margin-top: 25px;
+}
+
+/* Tarjeta */
+.admin-card {
+    background: #fff;
+    padding: 25px;
+    border-radius: 16px;
+    text-decoration: none;
+    color: #1a1a1a;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    border: 1px solid #e3e6eb;
+    text-align: center;
+    transition: all 0.25s ease;
+}
+
+/* Hover PRO */
+.admin-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    border-color: #cdd2d8;
+}
+
+/* Ícono dentro de un círculo */
+.admin-icon-circle {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 15px auto;
+    background: #eef3ff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-icon-circle span {
+    font-size: 32px;
+}
+
+/* Títulos de las tarjetas */
+.admin-card h2 {
+    font-size: 20px;
+    margin-bottom: 8px;
+    color: #2d3e50;
+}
+
+/* Descripción */
+.admin-card p {
+    font-size: 15px;
+    color: #555;
+}
+
+/***************************************************
+ * TABLA PROFESIONAL ADMIN
+ **************************************************/
+
+.admin-table-container {
+    margin-top: 25px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+    border: 1px solid #e4e7ec;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+.admin-table thead {
+    background: #f3f6fb;
+}
+
+.admin-table thead th {
+    text-transform: uppercase;
+    color: #3a4651;
+    letter-spacing: 0.5px;
+    font-size: 13px;
+    padding: 12px;
+    border-bottom: 2px solid #e0e3e7;
+}
+
+.admin-table tbody tr {
+    border-bottom: 1px solid #f0f2f5;
+    transition: background 0.2s ease;
+}
+
+.admin-table tbody tr:hover {
+    background: #f8faff;
+}
+
+.admin-table td {
+    padding: 14px 12px;
+    color: #333;
+}
+
+/* Badges de estado */
+.badge {
+    padding: 6px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.badge-active {
+    background: #d4f8df;
+    color: #2d8b44;
+    border: 1px solid #b1eac3;
+}
+
+.badge-inactive {
+    background: #ffe0e0;
+    color: #a12b2b;
+    border: 1px solid #ffc3c3;
+}
+
+/***************************************************
+ * FORMULARIO PROFESIONAL ADMIN
+ **************************************************/
+
+.admin-form-container {
+    max-width: 520px;
+    margin: 0 auto;
+    margin-top: 25px;
+    background: #fff;
+    padding: 25px 30px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 1px solid #e3e6eb;
+}
+
+.admin-form .form-group {
+    margin-bottom: 18px;
+}
+
+.admin-form label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #2d3e50;
+}
+
+.admin-form input,
+.admin-form select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 15px;
+    border-radius: 10px;
+    border: 1px solid #d0d5dc;
+    background: #f9fafb;
+    transition: border .2s ease, box-shadow .2s ease;
+}
+
+.admin-form input:focus,
+.admin-form select:focus {
+    border-color: #4a80ff;
+    outline: none;
+    background: #fff;
+    box-shadow: 0 0 4px rgba(71, 115, 255, 0.4);
+}
+
+.admin-btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    background: #4a80ff;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.admin-btn:hover {
+    background: #3a6bdd;
+    transform: translateY(-2px);
+}
+
+.admin-btn:active {
+    transform: translateY(0);
+}
+
+/***************************************************
+ * TABLA PROFESIONAL EMPLEADOS
+ **************************************************/
+
+/* Caja contenedora */
+.admin-table-container {
+    margin-top: 25px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+    border: 1px solid #e4e7ec;
+}
+
+/* Tabla */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+.admin-table thead {
+    background: #f3f6fb;
+}
+
+.admin-table thead th {
+    text-transform: uppercase;
+    color: #3a4651;
+    letter-spacing: 0.5px;
+    font-size: 13px;
+    padding: 12px;
+    border-bottom: 2px solid #e0e3e7;
+    text-align: left;
+}
+
+.admin-table tbody tr {
+    border-bottom: 1px solid #f0f2f5;
+    transition: background 0.2s ease;
+}
+
+.admin-table tbody tr:hover {
+    background: #f8faff;
+}
+
+.admin-table td {
+    padding: 14px 12px;
+    color: #333;
+}
+
+/***************************************************
+ * BADGES DE ROL Y DEPARTAMENTO
+ **************************************************/
+
+.badge {
+    padding: 6px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* Roles */
+.badge-role {
+    background: #e6f2ff;
+    color: #1857a3;
+    border: 1px solid #c3ddff;
+}
+
+/* Departamentos */
+.badge-depto {
+    background: #ffeccb;
+    color: #9a5a00;
+    border: 1px solid #ffd48a;
+}

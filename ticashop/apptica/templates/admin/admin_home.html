@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<h1 class="admin-title">Panel de Administración</h1>
+
+<div class="admin-grid">
+
+    <a href="{% url 'usuarios_list' %}" class="admin-card">
+        <div class="admin-icon-circle">
+            <span>👤</span>
+        </div>
+        <h2>Usuarios</h2>
+        <p>Administrar usuarios del sistema.</p>
+    </a>
+
+    <a href="{% url 'empleados_list' %}" class="admin-card">
+        <div class="admin-icon-circle">
+            <span>🧑‍💼</span>
+        </div>
+        <h2>Empleados</h2>
+        <p>Ver y gestionar empleados registrados.</p>
+    </a>
+
+    <a href="{% url 'usuario_create' %}" class="admin-card">
+        <div class="admin-icon-circle">
+            <span>✨</span>
+        </div>
+        <h2>Crear Usuario + Empleado</h2>
+        <p>Crear ambos en un solo paso.</p>
+    </a>
+
+</div>
+{% endblock %}

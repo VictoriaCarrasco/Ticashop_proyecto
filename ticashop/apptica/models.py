@@ -39,6 +39,7 @@ class Empleado(models.Model):
 
     # opcional: saldo simple para vacaciones
     saldo_vacaciones_dias = models.PositiveIntegerField(default=0)
+    sueldo_fijo = models.DecimalField(max_digits=10, decimal_places=2, default=500000)
 
     def __str__(self):
         return f"{self.nombre} · {self.rol}"
@@ -95,7 +96,7 @@ class ComisionVenta(models.Model):
     periodo = models.DateField()
     ventas_totales = models.DecimalField(max_digits=14, decimal_places=2, default=0)
 
-    # 👇 la columna existe en la BD, pero la vamos a rellenar nosotros
+    #  la columna existe en la BD, pero la vamos a rellenar nosotros
     comision = models.DecimalField(
         max_digits=14,
         decimal_places=2,
@@ -113,7 +114,7 @@ class ComisionVenta(models.Model):
         if self.ventas_totales is None:
             self.ventas_totales = Decimal("0")
 
-        # 💡 AQUÍ va tu fórmula:
+        #  AQUÍ va tu fórmula:
         # comision = ventas_totales * 0.015
         self.comision = self.ventas_totales * self.COMISION_PORCENTAJE
 

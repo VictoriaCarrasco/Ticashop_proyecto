@@ -263,7 +263,6 @@ def render_to_pdf(template_src, context_dict=None):
 
 
 @login_required
-@validar_rol(["ADMIN", "NOMINA"])
 def liquidaciones_list(request):
     # Si el empleado es admin/RRHH ve todas, si es normal solo las suyas
     empleado = None
@@ -283,7 +282,6 @@ def liquidaciones_list(request):
     return render(request, "liquidaciones_list.html", {"liquidaciones": qs})
 
 
-
 def liquidaciones_generar(request):
     hoy = timezone.now()
     periodo = date(hoy.year, hoy.month, 1)
@@ -291,27 +289,30 @@ def liquidaciones_generar(request):
     empleados = Empleado.objects.all()
     creadas = 0
 
-    SUELDO_BASE_DEMO = Decimal("1000000.00")  # puedes cambiar el valor si tu sueldo base es otro
-
     for e in empleados:
+        sueldo_base = Decimal(e.sueldo_fijo)  # Usa sueldo fijo individual
+        
         comision_reg = ComisionVenta.objects.filter(
             empleado=e,
             periodo__year=periodo.year,
             periodo__month=periodo.month,
         ).order_by("-id").first()
+
         comision = comision_reg.comision if comision_reg else Decimal("0")
 
         # Calcular descuento por ausencias
         total_days_in_month = monthrange(periodo.year, periodo.month)[1]
+
         ausencias = RegistroAsistencia.objects.filter(
             empleado=e,
             fecha__year=periodo.year,
             fecha__month=periodo.month,
             estado="AUSENTE"
         ).count()
-        sueldo_diario = SUELDO_BASE_DEMO / Decimal(total_days_in_month)
+
+        sueldo_diario = sueldo_base / Decimal(total_days_in_month)
         descuento_ausencias = sueldo_diario * Decimal(ausencias)
-        monto_final = SUELDO_BASE_DEMO - descuento_ausencias
+        monto_final = sueldo_base - descuento_ausencias
 
         obj, created = Liquidacion.objects.update_or_create(
             empleado=e,
@@ -322,11 +323,14 @@ def liquidaciones_generar(request):
                 "comisiones": comision,
             },
         )
+
         if created:
             creadas += 1
 
     messages.success(request, f"Se generaron/actualizaron {creadas} liquidaciones con descuento por ausencias.")
     return redirect("liquidaciones_list")
+
+
 
 
 
@@ -685,6 +689,16 @@ def empleados_list(request):
     return render(request, "admin/empleados_list.html", {"empleados": empleados})
 
 
+SUELDOS_FIJOS_ROL = {
+    "ADMIN": 1000000,
+    "RRHH": 900000,
+    "NOMINA": 850000,
+    "JEFATURA": 800000,
+    "SUP_COM": 750000,
+    "TECNICO": 650000,
+    "GENERAL": 500000,
+}
+
 @login_required
 def crear_usuario_empleado(request):
     if not request.user.is_staff:
@@ -698,6 +712,8 @@ def crear_usuario_empleado(request):
         departamento = request.POST["departamento"]
         password = request.POST["password"]
 
+        sueldo_fijo = SUELDOS_FIJOS_ROL.get(rol, 500000)  # Obtiene monto fijo por rol
+
         # Crear usuario Django
         user = User.objects.create(
             username=email.split("@")[0],
@@ -707,7 +723,7 @@ def crear_usuario_empleado(request):
             is_staff=True,
         )
 
-        # Crear empleado
+        # Crear empleado con SUELDO FIJO
         Empleado.objects.create(
             nombre=nombre,
             email=email,
@@ -715,12 +731,14 @@ def crear_usuario_empleado(request):
             rol=rol,
             departamento=departamento,
             activo=True,
+            sueldo_fijo=sueldo_fijo,
         )
 
         messages.success(request, "Usuario y empleado creados correctamente.")
         return redirect("admin_home")
 
     return render(request, "admin/crear_usuario_empleado.html")
+
 
 
 @login_required

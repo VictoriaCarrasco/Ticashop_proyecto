@@ -37,7 +37,7 @@
         <a class="btn ghost" href="{% url 'liquidaciones_detalle' l.id %}">Ver</a>
         <a class="btn" href="{% url 'liquidacion_pdf' l.id %}">Descargar PDF</a>
         
-        {# 👇 NUEVO: Botón de Firmar #}
+        
         {% if l.estado == "PENDIENTE_FIRMA" %}
           <a class="btn primary" href="{% url 'liquidacion_firmar' l.id %}">Firmar</a>
         {% endif %}

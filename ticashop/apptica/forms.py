@@ -7,7 +7,7 @@ class EmpleadoForm(forms.ModelForm):
         model = Empleado
         fields = ["nombre", "email", "rut", "rol", "departamento", "activo"]
         labels = {
-            "nombre": "Nombre y apellidos",   # 👈 cambia la etiqueta que verá el usuario
+            "nombre": "Nombre y apellidos",   #  cambia la etiqueta que verá el usuario
         }
         widgets = {
             "nombre": forms.TextInput(attrs={"class": "input"}),

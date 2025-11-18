@@ -10,50 +10,167 @@
 <h1 class="admin-title">Crear Usuario + Empleado</h1>
 
 <div class="admin-form-container">
-    <form method="POST" class="admin-form">
+    <form method="POST" class="admin-form" id="formCrearUsuario">
         {% csrf_token %}
 
         <div class="form-group">
-            <label>Nombre</label>
-            <input type="text" name="nombre" required>
+            <label>Nombre <span style="color: red;">*</span></label>
+            <input type="text" name="nombre" id="nombre" value="{{ nombre }}" required minlength="3" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+" placeholder="Ej: Juan Pérez">
+            <small style="color: #666; font-size: 12px;">Mínimo 3 caracteres, solo letras y espacios</small>
         </div>
 
         <div class="form-group">
-            <label>RUT</label>
-            <input type="text" name="rut" required>
+            <label>RUT <span style="color: red;">*</span></label>
+            <input type="text" name="rut" value="{{ rut }}" required pattern="\d{7,8}-[0-9kK]{1}" placeholder="Ej: 12345678-9">
+            <small style="color: #666; font-size: 12px;">Formato: 12345678-9</small>
         </div>
 
         <div class="form-group">
-            <label>Email</label>
-            <input type="email" name="email" required>
+            <label>Email <span style="color: red;">*</span></label>
+            <input type="email" name="email" value="{{ email }}" required placeholder="Ej: usuario@empresa.cl">
+            <small style="color: #666; font-size: 12px;">Debe ser un email válido y único</small>
         </div>
 
         <div class="form-group">
-            <label>Rol</label>
-            <select name="rol">
-                <option>ADMIN</option>
-                <option>RRHH</option>
-                <option>TECNICO</option>
-                <option>SUP_COM</option>
+            <label>Rol <span style="color: red;">*</span></label>
+            <select name="rol" required>
+                <option value="">-- Selecciona un rol --</option>
+                <option value="ADMIN" {% if rol == "ADMIN" %}selected{% endif %}>ADMIN</option>
+                <option value="RRHH" {% if rol == "RRHH" %}selected{% endif %}>RRHH</option>
+                <option value="NOMINA" {% if rol == "NOMINA" %}selected{% endif %}>NOMINA</option>
+                <option value="JEFATURA" {% if rol == "JEFATURA" %}selected{% endif %}>JEFATURA</option>
+                <option value="SUP_COM" {% if rol == "SUP_COM" %}selected{% endif %}>SUP_COM</option>
+                <option value="TECNICO" {% if rol == "TECNICO" %}selected{% endif %}>TECNICO</option>
+                <option value="GENERAL" {% if rol == "GENERAL" %}selected{% endif %}>GENERAL</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label>Departamento</label>
-            <select name="departamento">
-                <option>RRHH</option>
-                <option>FINANZAS</option>
-                <option>OTRO</option>
+            <label>Departamento <span style="color: red;">*</span></label>
+            <select name="departamento" required>
+                <option value="">-- Selecciona un departamento --</option>
+                <option value="RRHH" {% if departamento == "RRHH" %}selected{% endif %}>RRHH</option>
+                <option value="OPERACIONES" {% if departamento == "OPERACIONES" %}selected{% endif %}>OPERACIONES</option>
+                <option value="VENTAS" {% if departamento == "VENTAS" %}selected{% endif %}>VENTAS</option>
+                <option value="FINANZAS" {% if departamento == "FINANZAS" %}selected{% endif %}>FINANZAS</option>
+                <option value="OTRO" {% if departamento == "OTRO" %}selected{% endif %}>OTRO</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label>Contraseña</label>
-            <input type="password" name="password" required>
+            <label>Contraseña <span style="color: red;">*</span></label>
+            <input type="password" name="password" required minlength="6" placeholder="Mínimo 6 caracteres" id="password">
+            <small style="color: #666; font-size: 12px;">Mínimo 6 caracteres</small>
+        </div>
+
+        <div class="form-group">
+            <label>Confirmar Contraseña <span style="color: red;">*</span></label>
+            <input type="password" name="password_confirm" required minlength="6" placeholder="Repite la contraseña" id="password_confirm">
         </div>
 
         <button type="submit" class="admin-btn">Crear Usuario + Empleado</button>
+        <a href="{% url 'admin_home' %}" class="admin-btn" style="background: #6c757d; margin-left: 10px; display: inline-block; text-decoration: none;">Cancelar</a>
     </form>
 </div>
+
+<!-- Modal de mensajes personalizado -->
+<div id="modalMensajes" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+  <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-width: 500px; max-height: 80vh; overflow-y: auto;">
+    <h3 id="modalTitulo" style="margin: 0 0 20px 0; color: #333;">Errores de Validación</h3>
+    <div id="modalContenido" style="margin-bottom: 25px; color: #666; font-size: 15px; line-height: 1.6;">
+      <!-- Mensajes dinámicos -->
+    </div>
+    <div style="text-align: center;">
+      <button onclick="cerrarModalMensajes()" style="padding: 12px 40px; background: #0b5beeff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 500;">Entendido</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Validación de nombre sin números
+document.getElementById('nombre').addEventListener('input', function(e) {
+    const regex = /[0-9]/g;
+    if (regex.test(e.target.value)) {
+        e.target.value = e.target.value.replace(regex, '');
+    }
+});
+
+// Validación de contraseñas coincidentes
+document.getElementById('formCrearUsuario').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const passwordConfirm = document.getElementById('password_confirm').value;
+    const nombre = document.getElementById('nombre').value;
+    
+    // Validar que el nombre no tenga números
+    if (/\d/.test(nombre)) {
+        e.preventDefault();
+        mostrarModalMensaje('Error de Validación', 'El nombre no puede contener números.', 'error');
+        document.getElementById('nombre').focus();
+        return;
+    }
+    
+    // Validar contraseñas
+    if (password !== passwordConfirm) {
+        e.preventDefault();
+        mostrarModalMensaje('Error de Validación', 'Las contraseñas no coinciden. Por favor verifica.', 'error');
+        document.getElementById('password_confirm').focus();
+    }
+});
+
+// Formatear RUT automáticamente
+document.querySelector('input[name="rut"]').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/[^0-9kK]/g, '');
+    if (value.length > 1) {
+        value = value.slice(0, -1) + '-' + value.slice(-1);
+    }
+    e.target.value = value;
+});
+
+function mostrarModalMensaje(titulo, contenido, tipo) {
+    document.getElementById('modalTitulo').textContent = titulo;
+    document.getElementById('modalContenido').innerHTML = contenido;
+    
+    const modal = document.getElementById('modalMensajes');
+    modal.style.display = 'flex';
+}
+
+function cerrarModalMensajes() {
+    document.getElementById('modalMensajes').style.display = 'none';
+}
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('modalMensajes').addEventListener('click', function(e) {
+    if (e.target === this) {
+        cerrarModalMensajes();
+    }
+});
+
+// Mostrar mensajes de Django en modal si existen
+{% if messages %}
+window.addEventListener('DOMContentLoaded', function() {
+    let mensajes = '';
+    let tipoMensaje = 'info';
+    let titulo = 'Notificación';
+    
+    {% for message in messages %}
+        {% if message.tags == 'error' %}
+            tipoMensaje = 'error';
+            titulo = 'Error';
+            mensajes += '<p style="color: #cc0000; margin: 8px 0;">• {{ message|escapejs }}</p>';
+        {% elif message.tags == 'success' %}
+            tipoMensaje = 'success';
+            titulo = '✓ Éxito';
+            mensajes += '<p style="color: #00aa00; margin: 8px 0; font-weight: 500;">{{ message|escapejs }}</p>';
+        {% else %}
+            mensajes += '<p style="margin: 8px 0;">• {{ message|escapejs }}</p>';
+        {% endif %}
+    {% endfor %}
+    
+    if (mensajes) {
+        mostrarModalMensaje(titulo, mensajes, tipoMensaje);
+    }
+});
+{% endif %}
+</script>
 
 {% endblock %}

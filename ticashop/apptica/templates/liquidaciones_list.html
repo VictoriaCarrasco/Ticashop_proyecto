@@ -1,12 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Liquidaciones{% endblock %}
 
+
 {% block content %}
 <div class="toolbar">
   <h1 class="page-title m0">Liquidaciones de Sueldo</h1>
   <div class="spacer"></div>
   <a class="btn primary" href="{% url 'liquidaciones_generar' %}">+ Generar Liquidación</a>
 </div>
+
 
 <table class="table">
   <thead>
@@ -19,7 +21,6 @@
     </tr>
   </thead>
   <tbody>
-    {# Espera: liquidaciones con attrs empleado.nombre, periodo, monto_total, estado, pdf #}
     {% for l in liquidaciones %}
     <tr>
       <td>{{ l.empleado.nombre }}</td>
@@ -34,8 +35,12 @@
       </td>
       <td class="right">
         <a class="btn ghost" href="{% url 'liquidaciones_detalle' l.id %}">Ver</a>
-        {# 👉 Siempre genera y descarga el PDF al vuelo #}
         <a class="btn" href="{% url 'liquidacion_pdf' l.id %}">Descargar PDF</a>
+        
+        {# 👇 NUEVO: Botón de Firmar #}
+        {% if l.estado == "PENDIENTE_FIRMA" %}
+          <a class="btn primary" href="{% url 'liquidacion_firmar' l.id %}">Firmar</a>
+        {% endif %}
       </td>
     </tr>
     {% empty %}
@@ -46,3 +51,4 @@
   </tbody>
 </table>
 {% endblock %}
+

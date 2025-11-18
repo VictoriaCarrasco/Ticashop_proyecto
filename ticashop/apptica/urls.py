@@ -16,8 +16,9 @@ urlpatterns = [
 
     # Vacaciones
     path('vacaciones/', views.vacaciones_list, name='vacaciones_list'),
+    path('vacaciones/restablecer/', views.vacaciones_restablecer, name='vacaciones_restablecer'),
     path('vacaciones/export/', views.vacaciones_export, name='vacaciones_export'),
-    path('vacaciones/firmar/', views.vacaciones_firmar, name='vacaciones_firmar'),
+    path('vacaciones/solicitar/', views.vacaciones_solicitar, name='vacaciones_solicitar'),
     path('vacaciones/nueva/', views.vacaciones_nueva, name='vacaciones_nueva'),
     path('vacaciones/<int:pk>/', views.vacaciones_detalle, name='vacaciones_detalle'),
     path('vacaciones/<int:pk>/aprobar/', views.vacaciones_aprobar, name='vacaciones_aprobar'),
@@ -28,6 +29,7 @@ urlpatterns = [
     path('liquidaciones/nueva/', views.liquidaciones_generar, name='liquidaciones_generar'),
     path('liquidaciones/<int:pk>/', views.liquidaciones_detalle, name='liquidaciones_detalle'),
     path("liquidaciones/<int:pk>/pdf/", views.liquidacion_pdf, name="liquidacion_pdf"),
+    path('liquidaciones/<int:pk>/firmar/', views.liquidacion_firmar, name='liquidacion_firmar'),
     
 
 

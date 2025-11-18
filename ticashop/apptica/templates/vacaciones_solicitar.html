@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Solicitar Vacaciones{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 700px; margin: 50px auto;">
+    <h2>Solicitar Vacaciones</h2>
+    
+    <div class="info-box" style="background: #e8f4f8; padding: 15px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #0066cc;">
+        <p><strong>Empleado:</strong> {{ empleado.nombre }}</p>
+        <p><strong>Saldo de vacaciones disponible:</strong> {{ saldo_disponible }} días</p>
+        <p><strong>Máximo por solicitud:</strong> 15 días</p>
+    </div>
+
+    <form method="POST" style="background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 20px;">
+            <label for="{{ form.fecha_inicio.id_for_label }}" style="display: block; font-weight: bold; margin-bottom: 5px;">
+                {{ form.fecha_inicio.label }}
+            </label>
+            {{ form.fecha_inicio }}
+            {% if form.fecha_inicio.errors %}
+                <p style="color: red; font-size: 12px; margin-top: 5px;">{{ form.fecha_inicio.errors }}</p>
+            {% endif %}
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label for="{{ form.fecha_fin.id_for_label }}" style="display: block; font-weight: bold; margin-bottom: 5px;">
+                {{ form.fecha_fin.label }}
+            </label>
+            {{ form.fecha_fin }}
+            {% if form.fecha_fin.errors %}
+                <p style="color: red; font-size: 12px; margin-top: 5px;">{{ form.fecha_fin.errors }}</p>
+            {% endif %}
+        </div>
+
+        {% if form.non_field_errors %}
+            <div style="background: #ffe6e6; padding: 10px; border-radius: 5px; margin-bottom: 20px; color: #cc0000;">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" style="padding: 12px 30px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
+                Enviar Solicitud
+            </button>
+            <a href="{% url 'vacaciones_list' %}" style="padding: 12px 30px; background: #6c757d; color: white; text-decoration: none; border-radius: 5px; display: inline-block; text-align: center;">
+                Cancelar
+            </a>
+        </div>
+    </form>
+
+    <p style="font-size: 12px; color: #666; margin-top: 20px;">
+        <strong>Nota:</strong> Los días se calcularán automáticamente según el rango de fechas seleccionado.
+    </p>
+</div>
+
+<style>
+input[type="date"], input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+}
+</style>
+{% endblock %}

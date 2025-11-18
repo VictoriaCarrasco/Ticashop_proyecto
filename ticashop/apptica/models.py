@@ -46,15 +46,22 @@ class Empleado(models.Model):
 
 # ====== Vacaciones ======
 class SolicitudVacacional(models.Model):
+    ESTADOS = [
+        ('PENDIENTE', 'Pendiente'),
+        ('APROBADA', 'Aprobada'),
+        ('RECHAZADA', 'Rechazada'),
+    ]
+    
     empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE)
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
-    dias = models.PositiveIntegerField(default=0)          # puedes llenarlo a mano o calcular en la vista
-    estado = models.CharField(max_length=10, choices=ESTADO_VAC, default="PENDIENTE")
-    observacion = models.TextField(blank=True)
-
+    dias = models.IntegerField()
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='PENDIENTE')
+    fecha_solicitud = models.DateTimeField(auto_now_add=True)
+    
     def __str__(self):
-        return f"Vacaciones de {self.empleado.nombre} ({self.estado})"
+        return f"Solicitud {self.id} - {self.empleado.nombre}"
+
 
 
 # ====== Liquidaciones ======
@@ -69,11 +76,16 @@ class Liquidacion(models.Model):
         decimal_places=2,
         default=0,
         blank=True,
-        null=True,   # opcional, para que no sea obligatorio
+        null=True,
     )
+    
+    # NUEVOS CAMPOS PARA FIRMA DIGITAL
+    firma_empleado = models.ImageField(upload_to='firmas/', null=True, blank=True)
+    fecha_firma = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"Liquidación {self.empleado.nombre} · {self.periodo}"
+
 
 
 # ====== Comisiones ======

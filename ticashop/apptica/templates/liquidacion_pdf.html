@@ -91,11 +91,12 @@
   <p><span class="label">Gratificación legal (25% sueldo base):</span> ${{ gratificacion|floatformat:0 }}</p>
   <p><span class="label">Comisiones (1,5% sueldo base):</span> ${{ comisiones|floatformat:0 }}</p>
   <p><span class="label">Total haberes imponibles:</span> ${{ imponible|floatformat:0 }}</p>
+  <p><strong>Descuento por ausencias:</strong> ${{ descuento_ausencias|floatformat:0 }}</p>
   <br>
   <p><span class="label">Líquido a pago:</span> ${{ liquido|floatformat:0 }}</p>
 </div>
 
-<!-- TABLA RESUMEN (como en tu imagen) -->
+<!-- TABLA RESUMEN -->
 <div class="box">
   <table>
     <thead>
@@ -113,12 +114,23 @@
   </table>
 </div>
 
-<!-- FIRMA -->
-<div class="firma">
-  <div class="firma-linea"></div>
-  <div>{{ liquidacion.empleado.nombre }}</div>
-  <div>Firma Trabajador</div>
+<!-- FIRMA DIGITAL -->
+<div style="margin-top: 80px; text-align: center;">
+    <h3 style="border-bottom: 2px solid #333; padding-bottom: 10px;">Firma Trabajador</h3>
+    
+    {% if liquidacion.firma_empleado %}
+        <div style="margin: 30px auto; max-width: 400px;">
+            <img src="{{ liquidacion.firma_empleado.path }}" alt="Firma" style="max-width: 100%; border-bottom: 2px solid #000; padding-bottom: 10px;">
+        </div>
+        <p style="margin-top: 5px;"><strong>{{ liquidacion.empleado.nombre }}</strong></p>
+        <p style="font-size: 12px; color: #666;">Firmado el: {{ liquidacion.fecha_firma|date:"d/m/Y H:i" }}</p>
+    {% else %}
+        <div style="width: 350px; height: 100px; border-bottom: 2px solid #000; margin: 30px auto;"></div>
+        <p style="margin-top: 5px;"><strong>{{ liquidacion.empleado.nombre }}</strong></p>
+        <p style="font-size: 12px; color: #999;">Pendiente de firma</p>
+    {% endif %}
 </div>
 
 </body>
 </html>
+

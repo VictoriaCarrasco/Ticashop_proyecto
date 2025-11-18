@@ -6,6 +6,9 @@ from django.db.models import Count, Q, Sum
 from django.http import HttpResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from .forms import EmpleadoForm, SolicitudVacacionalForm
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
 from django.template.loader import render_to_string
 from io import BytesIO
 from django.template.loader import get_template
@@ -16,6 +19,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password
 from .decorators import validar_rol
+from calendar import monthrange
 
 
 from .forms import EmpleadoForm
@@ -53,28 +57,141 @@ def dashboard(request):
 # Vacaciones
 # ===========================
 @login_required
-@validar_rol(["ADMIN", "NOMINA", "SUP_COM", "VENDEDOR", "RRHH"])
 def vacaciones_list(request):
-    qs = (SolicitudVacacional.objects
-          .select_related("empleado")
-          .order_by("-fecha_inicio", "-id"))
+    empleado_id = request.session.get("empleado_id")
+    try:
+        empleado = Empleado.objects.get(id=empleado_id)
+    except Empleado.DoesNotExist:
+        empleado = None
+    
+    # Admin y RRHH ven todas, empleados normales solo las suyas
+    if request.user.is_staff or (empleado and empleado.rol in ["ADMIN", "RRHH"]):
+        qs = SolicitudVacacional.objects.select_related("empleado").order_by("-fecha_inicio", "-id")
+    else:
+        qs = SolicitudVacacional.objects.filter(empleado=empleado).order_by("-fecha_inicio", "-id")
+    
     return render(request, "vacaciones_list.html", {"solicitudes": qs})
 
-def vacaciones_export(request):
-    # CSV simple
-    rows = (SolicitudVacacional.objects
-            .select_related("empleado")
-            .values_list("empleado__nombre", "fecha_inicio", "fecha_fin", "dias", "estado"))
-    resp = HttpResponse(content_type="text/csv; charset=utf-8")
-    resp["Content-Disposition"] = 'attachment; filename="vacaciones.csv"'
-    resp.write("empleado,fecha_inicio,fecha_fin,dias,estado\n")
-    for r in rows:
-        resp.write(",".join([str(x) for x in r]) + "\n")
-    return resp
-
-def vacaciones_firmar(request):
-    messages.info(request, "Funcionalidad de firma digital: demo.")
+@login_required
+@validar_rol(["ADMIN", "RRHH"])
+def vacaciones_restablecer(request):
+    """
+    Restablece el saldo de vacaciones de todos los empleados a 15 días.
+    Solo accesible para ADMIN y RRHH.
+    """
+    empleados = Empleado.objects.all()
+    contador = 0
+    
+    for empleado in empleados:
+        empleado.saldo_vacaciones_dias = 15
+        empleado.save()
+        contador += 1
+    
+    messages.success(request, f"Se restablecieron los días de vacaciones para {contador} empleados.")
     return redirect("vacaciones_list")
+
+
+@login_required
+def vacaciones_solicitar(request):
+    empleado_id = request.session.get("empleado_id")
+    try:
+        empleado = Empleado.objects.get(id=empleado_id)
+    except Empleado.DoesNotExist:
+        messages.error(request, "No se encontró tu información de empleado.")
+        return redirect("dashboard")
+    
+    if request.method == "POST":
+        form = SolicitudVacacionalForm(request.POST)
+        if form.is_valid():
+            dias_solicitados = form.cleaned_data['dias']
+            
+            # Validar que tenga saldo suficiente
+            if dias_solicitados > empleado.saldo_vacaciones_dias:
+                messages.error(request, f"No tienes suficiente saldo. Disponible: {empleado.saldo_vacaciones_dias} días.")
+                return render(request, "vacaciones_solicitar.html", {
+                    'form': form,
+                    'empleado': empleado,
+                    'saldo_disponible': empleado.saldo_vacaciones_dias,
+                })
+            
+            # Crear la solicitud
+            solicitud = form.save(commit=False)
+            solicitud.empleado = empleado
+            solicitud.estado = "PENDIENTE"
+            solicitud.dias = dias_solicitados
+            solicitud.save()
+            
+            # Descontar del saldo del empleado
+            empleado.saldo_vacaciones_dias -= dias_solicitados
+            empleado.save()
+            
+            messages.success(request, f"Solicitud de {solicitud.dias} días enviada. Saldo restante: {empleado.saldo_vacaciones_dias} días.")
+            return redirect("vacaciones_list")
+        else:
+            messages.error(request, "Por favor corrige los errores en el formulario.")
+    else:
+        form = SolicitudVacacionalForm()
+    
+    context = {
+        'form': form,
+        'empleado': empleado,
+        'saldo_disponible': empleado.saldo_vacaciones_dias,
+    }
+    return render(request, "vacaciones_solicitar.html", context)
+
+
+def vacaciones_export(request):
+    # Crear el libro de Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Solicitudes de Vacaciones"
+    
+    # Encabezados con estilo
+    headers = ['Empleado', 'Fecha Inicio', 'Fecha Fin', 'Días', 'Estado']
+    ws.append(headers)
+    
+    # Estilo para los encabezados
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=12)
+    
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Obtener datos
+    solicitudes = SolicitudVacacional.objects.select_related("empleado").order_by("-fecha_inicio")
+    
+    for sol in solicitudes:
+        ws.append([
+            sol.empleado.nombre,
+            sol.fecha_inicio.strftime("%d/%m/%Y"),
+            sol.fecha_fin.strftime("%d/%m/%Y"),
+            sol.dias,
+            sol.get_estado_display()
+        ])
+    
+    # Ajustar ancho de columnas
+    ws.column_dimensions['A'].width = 25
+    ws.column_dimensions['B'].width = 15
+    ws.column_dimensions['C'].width = 15
+    ws.column_dimensions['D'].width = 10
+    ws.column_dimensions['E'].width = 15
+    
+    # Centrar contenido
+    for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=5):
+        for cell in row:
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Preparar respuesta HTTP
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="solicitudes_vacaciones.xlsx"'
+    
+    wb.save(response)
+    return response
+
 
 def vacaciones_nueva(request):
     # Placeholder: muestra un aviso (puedes crear un formulario si quieres)
@@ -96,14 +213,23 @@ def vacaciones_aprobar(request, pk: int):
     messages.success(request, f"Solicitud #{v.pk} aprobada.")
     return redirect("vacaciones_list")
 
+@validar_rol(["ADMIN", "RRHH"])
 def vacaciones_rechazar(request, pk: int):
     if request.method != "GET":
         return HttpResponseNotAllowed(["GET"])
     v = get_object_or_404(SolicitudVacacional, pk=pk)
+    
+    # Solo devolver días si estaba PENDIENTE
+    if v.estado == "PENDIENTE":
+        empleado = v.empleado
+        empleado.saldo_vacaciones_dias += v.dias
+        empleado.save()
+    
     v.estado = "RECHAZADA"
     v.save(update_fields=["estado"])
-    messages.success(request, f"Solicitud #{v.pk} rechazada.")
+    messages.success(request, f"Solicitud #{v.pk} rechazada. Días devueltos al saldo del empleado.")
     return redirect("vacaciones_list")
+
 
 
 # ===========================
@@ -139,53 +265,123 @@ def render_to_pdf(template_src, context_dict=None):
 @login_required
 @validar_rol(["ADMIN", "NOMINA"])
 def liquidaciones_list(request):
-    qs = Liquidacion.objects.select_related("empleado").order_by("-periodo", "-id")
+    # Si el empleado es admin/RRHH ve todas, si es normal solo las suyas
+    empleado = None
+    try:
+        empleado_id = request.session.get("empleado_id")
+        if empleado_id:
+            empleado = Empleado.objects.get(id=empleado_id)
+    except Empleado.DoesNotExist:
+        empleado = None
+
+    if request.user.is_staff or (empleado and empleado.rol=="RRHH"):
+        qs = Liquidacion.objects.select_related("empleado").order_by("-periodo", "-id")
+    else:
+        # Solo liquidaciones del empleado logueado
+        qs = Liquidacion.objects.filter(empleado=empleado).order_by("-periodo", "-id")
+
     return render(request, "liquidaciones_list.html", {"liquidaciones": qs})
 
 
+
 def liquidaciones_generar(request):
-    # Usamos el primer día del mes como "periodo" de la liquidación
     hoy = timezone.now()
     periodo = date(hoy.year, hoy.month, 1)
 
     empleados = Empleado.objects.all()
     creadas = 0
 
-    SUELDO_BASE_DEMO = Decimal("1000000.00")  # lo que estás usando como sueldo base
+    SUELDO_BASE_DEMO = Decimal("1000000.00")  # puedes cambiar el valor si tu sueldo base es otro
 
     for e in empleados:
-        # 1) Buscamos la comisión de ventas para este empleado y este mes
         comision_reg = ComisionVenta.objects.filter(
             empleado=e,
             periodo__year=periodo.year,
             periodo__month=periodo.month,
         ).order_by("-id").first()
-
         comision = comision_reg.comision if comision_reg else Decimal("0")
 
-        # 2) Creamos o actualizamos la liquidación con esa comisión
+        # Calcular descuento por ausencias
+        total_days_in_month = monthrange(periodo.year, periodo.month)[1]
+        ausencias = RegistroAsistencia.objects.filter(
+            empleado=e,
+            fecha__year=periodo.year,
+            fecha__month=periodo.month,
+            estado="AUSENTE"
+        ).count()
+        sueldo_diario = SUELDO_BASE_DEMO / Decimal(total_days_in_month)
+        descuento_ausencias = sueldo_diario * Decimal(ausencias)
+        monto_final = SUELDO_BASE_DEMO - descuento_ausencias
+
         obj, created = Liquidacion.objects.update_or_create(
             empleado=e,
             periodo=periodo,
             defaults={
-                "monto_total": SUELDO_BASE_DEMO,
+                "monto_total": monto_final,
                 "estado": "PENDIENTE_FIRMA",
-                "comisiones": comision,  # 👈 AQUÍ guardamos la comisión calculada
+                "comisiones": comision,
             },
         )
-
         if created:
             creadas += 1
 
-    messages.success(request, f"Se generaron/actualizaron {creadas} liquidaciones.")
+    messages.success(request, f"Se generaron/actualizaron {creadas} liquidaciones con descuento por ausencias.")
     return redirect("liquidaciones_list")
 
+
+
+@login_required
+def liquidacion_firmar(request, pk: int):
+    liquidacion = get_object_or_404(Liquidacion, pk=pk)
+    
+    # Verificar que el empleado logueado sea el dueño de la liquidación
+    empleado_id = request.session.get("empleado_id")
+    if liquidacion.empleado.id != empleado_id:
+        messages.error(request, "No puedes firmar esta liquidación.")
+        return redirect("liquidaciones_list")
+    
+    if request.method == "POST":
+        # Aquí recibes la firma como imagen base64 o archivo
+        firma_data = request.POST.get("firma")
+        
+        # Convertir la firma de canvas (base64) a imagen
+        import base64
+        from django.core.files.base import ContentFile
+        
+        format, imgstr = firma_data.split(';base64,')
+        ext = format.split('/')[-1]
+        firma_file = ContentFile(base64.b64decode(imgstr), name=f'firma_{liquidacion.id}.{ext}')
+        
+        liquidacion.firma_empleado = firma_file
+        liquidacion.fecha_firma = timezone.now()
+        liquidacion.estado = "FIRMADA"
+        liquidacion.save()
+        
+        messages.success(request, "Liquidación firmada correctamente.")
+        return redirect("liquidaciones_list")
+    
+    return render(request, "liquidacion_firmar.html", {"liquidacion": liquidacion})
 
 
 def liquidaciones_detalle(request, pk: int):
     l = get_object_or_404(Liquidacion.objects.select_related("empleado"), pk=pk)
     # Para mantener simple, reusamos la lista filtrada
     return render(request, "liquidaciones_list.html", {"liquidaciones": [l]})
+
+def get_descuento_ausencias(liquidacion):
+    periodo = liquidacion.periodo
+    empleado = liquidacion.empleado
+    SUELDO_BASE_DEMO = Decimal("1000000.00")
+    total_days_in_month = monthrange(periodo.year, periodo.month)[1]
+    ausencias = RegistroAsistencia.objects.filter(
+        empleado=empleado,
+        fecha__year=periodo.year,
+        fecha__month=periodo.month,
+        estado="AUSENTE"
+    ).count()
+    sueldo_diario = SUELDO_BASE_DEMO / Decimal(total_days_in_month)
+    return sueldo_diario * Decimal(ausencias)
+
 
 
 def liquidacion_pdf(request, pk: int):
@@ -196,11 +392,12 @@ def liquidacion_pdf(request, pk: int):
 
     sueldo_base = liquidacion.monto_total
     comisiones = liquidacion.comisiones or Decimal("0")
+    descuento_ausencias = get_descuento_ausencias(liquidacion)
 
     GRAT_RATE = Decimal("0.25")
     gratificacion = sueldo_base * GRAT_RATE
-
     imponible = sueldo_base + gratificacion + comisiones
+
     AFP_RATE = Decimal("0.10")
     SALUD_RATE = Decimal("0.07")
     SEGURO_RATE = Decimal("0.006")
@@ -210,14 +407,14 @@ def liquidacion_pdf(request, pk: int):
     seguro = imponible * SEGURO_RATE
     impuesto = Decimal("0")
 
-    total_descuentos = afp + salud + seguro + impuesto
+    total_descuentos = afp + salud + seguro + impuesto + descuento_ausencias
     liquido = imponible - total_descuentos
 
     context = {
         "liquidacion": liquidacion,
         "sueldo_base": sueldo_base,
         "gratificacion": gratificacion,
-        "comisiones": comisiones,     # 👈 viene del modelo
+        "comisiones": comisiones,
         "imponible": imponible,
         "afp": afp,
         "salud": salud,
@@ -225,6 +422,9 @@ def liquidacion_pdf(request, pk: int):
         "impuesto": impuesto,
         "total_descuentos": total_descuentos,
         "liquido": liquido,
+        "descuento_ausencias": descuento_ausencias,
+        "firma_empleado": liquidacion.firma_empleado,  # 👈 NUEVO
+        "fecha_firma": liquidacion.fecha_firma,  # 👈 NUEVO
     }
 
     pdf_bytes = render_to_pdf("liquidacion_pdf.html", context)
@@ -241,7 +441,7 @@ def liquidacion_pdf(request, pk: int):
 # ===========================
 # Comisiones
 # ===========================
-@validar_rol(["SUP_COM"])
+@validar_rol(["SUP_COM","ADMIN","GENERAL"])
 def comisiones_list(request):
     qs = ComisionVenta.objects.select_related("empleado").order_by("-periodo", "-id")
     return render(request, "comisiones.html", {"comisiones": qs})
@@ -257,15 +457,60 @@ def comisiones_calcular(request):
     return redirect("comisiones_list")
 
 def comisiones_export(request):
-    qs = ComisionVenta.objects.select_related("empleado").values_list(
-        "empleado__nombre", "periodo", "ventas_totales", "comision", "estado"
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, PatternFill
+    
+    # Crear el libro de Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Comisiones de Ventas"
+    
+    # Encabezados con estilo
+    headers = ['Empleado', 'Período', 'Ventas Totales', 'Comisión', 'Estado']
+    ws.append(headers)
+    
+    # Estilo para los encabezados
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=12)
+    
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Obtener datos
+    comisiones = ComisionVenta.objects.select_related("empleado").order_by("-periodo")
+    
+    for com in comisiones:
+        ws.append([
+            com.empleado.nombre,
+            com.periodo.strftime("%m/%Y"),
+            f"${com.ventas_totales:,.0f}",
+            f"${com.comision:,.0f}",
+            com.estado
+        ])
+    
+    # Ajustar ancho de columnas
+    ws.column_dimensions['A'].width = 25
+    ws.column_dimensions['B'].width = 12
+    ws.column_dimensions['C'].width = 18
+    ws.column_dimensions['D'].width = 15
+    ws.column_dimensions['E'].width = 15
+    
+    # Centrar contenido
+    for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=5):
+        for cell in row:
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+    
+    # Preparar respuesta HTTP
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    resp = HttpResponse(content_type="text/csv; charset=utf-8")
-    resp["Content-Disposition"] = 'attachment; filename="comisiones.csv"'
-    resp.write("empleado,periodo,ventas_totales,comision,estado\n")
-    for r in qs:
-        resp.write(",".join([str(x) for x in r]) + "\n")
-    return resp
+    response['Content-Disposition'] = 'attachment; filename="comisiones_ventas.xlsx"'
+    
+    wb.save(response)
+    return response
+
 
 def comisiones_detalle(request, pk: int):
     c = get_object_or_404(ComisionVenta.objects.select_related("empleado"), pk=pk)

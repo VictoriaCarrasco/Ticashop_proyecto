@@ -2,11 +2,11 @@
 {% block title %}Vacaciones{% endblock %}
 {% block content %}
 <div class="toolbar">
-  <h1 class="page-title m0">Gestión de Vacaciones</h1>
+  <h1 class="page-title m0">Solicitudes de Vacaciones</h1>
   <div class="spacer"></div>
+  <a class="btn ghost" href="#" onclick="mostrarConfirmacion(event)">Restablecer Días</a>
   <a class="btn ghost" href="{% url 'vacaciones_export' %}">Exportar</a>
-  <a class="btn ghost" href="{% url 'vacaciones_firmar' %}">Firmar digitalmente</a>
-  <a class="btn primary" href="{% url 'vacaciones_nueva' %}">+ Nueva</a>
+  <a class="btn primary" href="{% url 'vacaciones_solicitar' %}"> Pedir Vacaciones</a>
 </div>
 
 <div class="table-wrap">
@@ -22,7 +22,6 @@
       </tr>
     </thead>
     <tbody>
-      {# Espera en contexto: solicitudes queryset/list con attrs: empleado.nombre, fecha_inicio, fecha_fin, dias, estado #}
       {% for v in solicitudes %}
       <tr>
         <td>{{ v.empleado.nombre }}</td>
@@ -36,8 +35,10 @@
         </td>
         <td class="right">
           <a class="btn ghost" href="{% url 'vacaciones_detalle' v.id %}">Ver</a>
-          <a class="btn success" href="{% url 'vacaciones_aprobar' v.id %}">Aprobar</a>
-          <a class="btn danger" href="{% url 'vacaciones_rechazar' v.id %}">Rechazar</a>
+          {% if v.estado == "PENDIENTE" %}
+            <a class="btn success" href="{% url 'vacaciones_aprobar' v.id %}">Aprobar</a>
+            <a class="btn danger" href="{% url 'vacaciones_rechazar' v.id %}">Rechazar</a>
+          {% endif %}
         </td>
       </tr>
       {% empty %}
@@ -46,4 +47,41 @@
     </tbody>
   </table>
 </div>
+
+<!-- Modal de confirmación personalizado -->
+<div id="modalConfirmacion" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+  <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-width: 450px; text-align: center;">
+    <h3 style="margin: 0 0 20px 0; color: #333;">Restablecer Días de Vacaciones</h3>
+    <p style="margin-bottom: 30px; color: #666; font-size: 15px;">¿Está seguro que desea restablecer los días de vacaciones de todos los empleados a 15 días?</p>
+    <div style="display: flex; gap: 10px; justify-content: center;">
+      <button onclick="confirmarRestablecer()" style="padding: 12px 30px; background: #2247eeff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 500;">Aceptar</button>
+      <button onclick="cerrarModal()" style="padding: 12px 30px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 500;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function mostrarConfirmacion(event) {
+  event.preventDefault();
+  const modal = document.getElementById('modalConfirmacion');
+  modal.style.display = 'flex';
+}
+
+function cerrarModal() {
+  const modal = document.getElementById('modalConfirmacion');
+  modal.style.display = 'none';
+}
+
+function confirmarRestablecer() {
+  window.location.href = "{% url 'vacaciones_restablecer' %}";
+}
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('modalConfirmacion').addEventListener('click', function(e) {
+  if (e.target === this) {
+    cerrarModal();
+  }
+});
+</script>
+
 {% endblock %}

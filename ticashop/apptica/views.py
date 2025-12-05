@@ -20,6 +20,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password
 from .decorators import validar_rol
 from calendar import monthrange
+from .models import ComisionVenta 
+
 
 
 from .forms import EmpleadoForm
@@ -30,6 +32,25 @@ from .models import (
     ComisionVenta,
     RegistroAsistencia,
 )
+
+# apptica/views.py
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.auth import login, logout
+from django.contrib.auth.models import User
+
+from .models import Empleado
+# (el resto de tus imports puede ir aquí también)
+
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth import login, logout
+from django.contrib.auth.models import User
+from .models import Empleado
+
+
 
 # ===========================
 # Dashboard
@@ -236,6 +257,7 @@ def vacaciones_rechazar(request, pk: int):
 # Liquidaciones
 # ===========================
 
+
 def render_to_pdf(template_src, context_dict=None):
     """
     Renderiza una plantilla HTML a PDF usando xhtml2pdf.
@@ -261,28 +283,54 @@ def render_to_pdf(template_src, context_dict=None):
     return result.getvalue()
 
 
-
 @login_required
 def liquidaciones_list(request):
-    # Si el empleado es admin/RRHH ve todas, si es normal solo las suyas
-    empleado = None
-    try:
-        empleado_id = request.session.get("empleado_id")
-        if empleado_id:
-            empleado = Empleado.objects.get(id=empleado_id)
-    except Empleado.DoesNotExist:
-        empleado = None
+    """
+    - Empleado con rol NOMINA: ve TODAS las liquidaciones.
+    - Cualquier otro rol: solo ve SUS propias liquidaciones.
+    """
+    empleado_id = request.session.get("empleado_id")
+    if not empleado_id:
+        messages.error(request, "No se encontró el empleado asociado a tu sesión.")
+        return redirect("dashboard")
 
-    if request.user.is_staff or (empleado and empleado.rol=="RRHH"):
-        qs = Liquidacion.objects.select_related("empleado").order_by("-periodo", "-id")
+    empleado = get_object_or_404(Empleado, id=empleado_id)
+
+    if empleado.rol == "NOMINA":
+        # Nómina ve todo
+        qs = (
+            Liquidacion.objects
+            .select_related("empleado")
+            .order_by("-periodo", "-id")
+        )
     else:
-        # Solo liquidaciones del empleado logueado
-        qs = Liquidacion.objects.filter(empleado=empleado).order_by("-periodo", "-id")
+        # Cualquier otro rol solo ve sus propias liquidaciones
+        qs = (
+            Liquidacion.objects
+            .filter(empleado=empleado)
+            .select_related("empleado")
+            .order_by("-periodo", "-id")
+        )
 
     return render(request, "liquidaciones_list.html", {"liquidaciones": qs})
 
 
+@login_required
 def liquidaciones_generar(request):
+    """
+    SOLO rol NOMINA puede generar/actualizar liquidaciones.
+    """
+    empleado_id = request.session.get("empleado_id")
+    if not empleado_id:
+        messages.error(request, "No se encontró el empleado asociado a tu sesión.")
+        return redirect("dashboard")
+
+    empleado = get_object_or_404(Empleado, id=empleado_id)
+
+    if empleado.rol != "NOMINA":
+        messages.error(request, "No tienes permisos para generar liquidaciones.")
+        return redirect("liquidaciones_list")
+
     hoy = timezone.now()
     periodo = date(hoy.year, hoy.month, 1)
 
@@ -291,7 +339,7 @@ def liquidaciones_generar(request):
 
     for e in empleados:
         sueldo_base = Decimal(e.sueldo_fijo)  # Usa sueldo fijo individual
-        
+
         comision_reg = ComisionVenta.objects.filter(
             empleado=e,
             periodo__year=periodo.year,
@@ -327,50 +375,80 @@ def liquidaciones_generar(request):
         if created:
             creadas += 1
 
-    messages.success(request, f"Se generaron/actualizaron {creadas} liquidaciones con descuento por ausencias.")
+    messages.success(
+        request,
+        f"Se generaron/actualizaron {creadas} liquidaciones con descuento por ausencias."
+    )
     return redirect("liquidaciones_list")
-
-
-
 
 
 @login_required
 def liquidacion_firmar(request, pk: int):
+    """
+    Solo el dueño de la liquidación puede firmarla.
+    """
     liquidacion = get_object_or_404(Liquidacion, pk=pk)
-    
-    # Verificar que el empleado logueado sea el dueño de la liquidación
+
     empleado_id = request.session.get("empleado_id")
-    if liquidacion.empleado.id != empleado_id:
+    if not empleado_id or liquidacion.empleado_id != empleado_id:
         messages.error(request, "No puedes firmar esta liquidación.")
         return redirect("liquidaciones_list")
-    
+
     if request.method == "POST":
-        # Aquí recibes la firma como imagen base64 o archivo
         firma_data = request.POST.get("firma")
-        
-        # Convertir la firma de canvas (base64) a imagen
+        if not firma_data:
+            messages.error(request, "No se recibió la firma.")
+            return redirect("liquidacion_firmar", pk=pk)
+
         import base64
         from django.core.files.base import ContentFile
-        
-        format, imgstr = firma_data.split(';base64,')
-        ext = format.split('/')[-1]
-        firma_file = ContentFile(base64.b64decode(imgstr), name=f'firma_{liquidacion.id}.{ext}')
-        
+
+        format, imgstr = firma_data.split(";base64,")
+        ext = format.split("/")[-1]
+        firma_file = ContentFile(
+            base64.b64decode(imgstr),
+            name=f"firma_{liquidacion.id}.{ext}"
+        )
+
         liquidacion.firma_empleado = firma_file
         liquidacion.fecha_firma = timezone.now()
         liquidacion.estado = "FIRMADA"
         liquidacion.save()
-        
+
         messages.success(request, "Liquidación firmada correctamente.")
         return redirect("liquidaciones_list")
-    
+
     return render(request, "liquidacion_firmar.html", {"liquidacion": liquidacion})
 
 
+@login_required
 def liquidaciones_detalle(request, pk: int):
-    l = get_object_or_404(Liquidacion.objects.select_related("empleado"), pk=pk)
-    # Para mantener simple, reusamos la lista filtrada
-    return render(request, "liquidaciones_list.html", {"liquidaciones": [l]})
+    """
+    - Rol NOMINA: puede ver cualquier liquidación.
+    - Cualquier otro rol: solo puede ver su propia liquidación.
+    """
+    liquidacion = get_object_or_404(
+        Liquidacion.objects.select_related("empleado"),
+        pk=pk
+    )
+
+    empleado_id = request.session.get("empleado_id")
+    if not empleado_id:
+        messages.error(request, "No se encontró el empleado asociado a tu sesión.")
+        return redirect("liquidaciones_list")
+
+    empleado = get_object_or_404(Empleado, id=empleado_id)
+
+    if empleado.rol != "NOMINA" and liquidacion.empleado_id != empleado.id:
+        messages.error(request, "No puedes ver esta liquidación.")
+        return redirect("liquidaciones_list")
+
+    return render(
+        request,
+        "liquidaciones_list.html",
+        {"liquidaciones": [liquidacion]}
+    )
+
 
 def get_descuento_ausencias(liquidacion):
     periodo = liquidacion.periodo
@@ -387,15 +465,17 @@ def get_descuento_ausencias(liquidacion):
     return sueldo_diario * Decimal(ausencias)
 
 
-
+@login_required
 def liquidacion_pdf(request, pk: int):
     liquidacion = get_object_or_404(
         Liquidacion.objects.select_related("empleado"),
         pk=pk
     )
 
+    # 👇 Ahora la comisión se obtiene desde ComisionVenta
+    comisiones = get_comision_mes(liquidacion)
+
     sueldo_base = liquidacion.monto_total
-    comisiones = liquidacion.comisiones or Decimal("0")
     descuento_ausencias = get_descuento_ausencias(liquidacion)
 
     GRAT_RATE = Decimal("0.25")
@@ -414,11 +494,16 @@ def liquidacion_pdf(request, pk: int):
     total_descuentos = afp + salud + seguro + impuesto + descuento_ausencias
     liquido = imponible - total_descuentos
 
+    # 👇 opcional: sincronizar el campo en la BD por si quedó en 0
+    if liquidacion.comisiones != comisiones:
+        liquidacion.comisiones = comisiones
+        liquidacion.save(update_fields=["comisiones"])
+
     context = {
         "liquidacion": liquidacion,
         "sueldo_base": sueldo_base,
         "gratificacion": gratificacion,
-        "comisiones": comisiones,
+        "comisiones": comisiones,          # <-- comisión real
         "imponible": imponible,
         "afp": afp,
         "salud": salud,
@@ -427,8 +512,8 @@ def liquidacion_pdf(request, pk: int):
         "total_descuentos": total_descuentos,
         "liquido": liquido,
         "descuento_ausencias": descuento_ausencias,
-        "firma_empleado": liquidacion.firma_empleado,  # 👈 NUEVO
-        "fecha_firma": liquidacion.fecha_firma,  # 👈 NUEVO
+        "firma_empleado": liquidacion.firma_empleado,
+        "fecha_firma": liquidacion.fecha_firma,
     }
 
     pdf_bytes = render_to_pdf("liquidacion_pdf.html", context)
@@ -442,9 +527,32 @@ def liquidacion_pdf(request, pk: int):
 
 
 
+
+
 # ===========================
 # Comisiones
 # ===========================
+
+def get_comision_mes(liquidacion):
+    """
+    Busca la comisión del mes de esta liquidación en ComisionVenta.
+    Si no hay registro, devuelve 0.
+    """
+    periodo = liquidacion.periodo
+    empleado = liquidacion.empleado
+
+    reg = ComisionVenta.objects.filter(
+        empleado=empleado,
+        periodo__year=periodo.year,
+        periodo__month=periodo.month,
+    ).order_by("-id").first()
+
+    if reg and reg.comision is not None:
+        return reg.comision
+
+    return Decimal("0")
+
+
 @validar_rol(["SUP_COM","ADMIN","GENERAL"])
 def comisiones_list(request):
     qs = ComisionVenta.objects.select_related("empleado").order_by("-periodo", "-id")
@@ -609,29 +717,33 @@ def usuarios_export(request):
     return resp
 
 
+
 def login_empleado(request):
     """
-    Login usando:
-    - RUT desde apptica_empleado
-    - Contraseña desde auth_user (user.password)
-    Vinculando por el email del empleado.
+    - Si viene con ?next=/admin/  → usa 'login_admin.html' (login admin estilizado)
+    - Si no                       → usa 'login.html' (login empleados)
     """
+    next_url = request.GET.get("next", "") or request.POST.get("next", "")
+    if next_url is None:
+        next_url = ""
+
+    es_login_admin = next_url.startswith("/admin")
+    template_name = "login_admin.html" if es_login_admin else "login.html"
+
     if request.method == "POST":
-        rut = request.POST.get("rut", "").strip()
-        password = request.POST.get("password", "")
+        rut = (request.POST.get("rut") or "").strip()
+        password = request.POST.get("password") or ""
 
         if not rut or not password:
             messages.error(request, "Debes ingresar RUT y contraseña.")
-            return render(request, "login.html")
+            return render(request, template_name, {"next": next_url})
 
-        # 1) Buscar empleado por RUT
         try:
             empleado = Empleado.objects.get(rut=rut, activo=True)
         except Empleado.DoesNotExist:
             messages.error(request, "RUT no encontrado o empleado inactivo.")
-            return render(request, "login.html")
+            return render(request, template_name, {"next": next_url})
 
-        # 2) Buscar usuario Django por email del empleado
         try:
             user = User.objects.get(email=empleado.email, is_active=True)
         except User.DoesNotExist:
@@ -639,29 +751,31 @@ def login_empleado(request):
                 request,
                 "No hay un usuario del sistema asociado al correo de este empleado."
             )
-            return render(request, "login.html")
+            return render(request, template_name, {"next": next_url})
 
-        # 3) Validar contraseña contra user.password
         if not user.check_password(password):
             messages.error(request, "Contraseña incorrecta.")
-            return render(request, "login.html")
+            return render(request, template_name, {"next": next_url})
 
-        # 4) Hacer login y guardar info de empleado en sesión (opcional)
         login(request, user)
         request.session["empleado_id"] = empleado.id
         request.session["empleado_nombre"] = empleado.nombre
         request.session["empleado_rut"] = empleado.rut
         request.session["empleado_rol"] = empleado.rol
 
+        if next_url:
+            return redirect(next_url)
         return redirect("dashboard")
 
-    # Si es GET, solo mostramos el formulario
-    return render(request, "login.html")
+    return render(request, template_name, {"next": next_url})
 
 
 def logout_empleado(request):
     logout(request)
     return redirect("login_empleado")
+
+
+
 
 
 @login_required

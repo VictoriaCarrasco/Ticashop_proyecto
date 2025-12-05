@@ -4,7 +4,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Ingreso Empleados - RRHH</title>
+  <title>Ingreso Administrador - RRHH</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <link rel="stylesheet" href="{% static 'css/main.css' %}?v=4" />
@@ -94,16 +94,16 @@
       text-align: center;
       color: #94a3b8;
     }
-    .login-admin-link {
+    .login-back {
       margin-top: 8px;
       font-size: 12px;
       text-align: center;
     }
-    .login-admin-link a {
+    .login-back a {
       color: #2563eb;
       text-decoration: none;
     }
-    .login-admin-link a:hover {
+    .login-back a:hover {
       text-decoration: underline;
     }
   </style>
@@ -111,9 +111,9 @@
 <body>
   <div class="login-wrapper">
     <div class="login-card">
-      <h1 class="login-title">Ingreso Empleados</h1>
+      <h1 class="login-title">Ingreso Administrador</h1>
       <p class="login-subtitle">
-        Accede a tu panel de asistencias, vacaciones y liquidaciones.
+        Acceso exclusivo al panel de administración de RRHH.
       </p>
 
       {% if messages %}
@@ -124,6 +124,8 @@
 
       <form method="post" action="{% url 'login_empleado' %}">
         {% csrf_token %}
+        {# Mantener el next para ir al /admin/ después de loguearse #}
+        <input type="hidden" name="next" value="{{ next|default:'/admin/' }}">
 
         <div style="margin-bottom: 12px;">
           <label class="field-label" for="id_rut">RUT</label>
@@ -133,6 +135,7 @@
             type="text"
             class="field-input"
             autofocus
+            value=""
           />
         </div>
 
@@ -147,17 +150,16 @@
         </div>
 
         <button type="submit" class="btn-submit">
-          Ingresar
+          Ingresar al panel admin
         </button>
       </form>
 
-      <div class="login-admin-link">
-        ¿Eres administrador?
-        <a href="{% url 'login_empleado' %}?next=/admin/">Ir al admin</a>
+      <div class="login-back">
+        <a href="{% url 'login_empleado' %}">Volver al ingreso de empleados</a>
       </div>
 
       <div class="login-footer">
-        © {{ now|date:"Y" }} Ticashop — Portal de empleados
+        © {{ now|date:"Y" }} Ticashop — Panel administrador
       </div>
     </div>
   </div>

@@ -23,19 +23,22 @@
           {% if empleado_actual.rol == "ADMIN" or empleado_actual.rol == "GENERAL" or empleado_actual.rol == "TECNICO" or empleado_actual.rol == "RRHH" %}
             <a href="{% url 'vacaciones_list' %}" data-ruta="{% url 'vacaciones_list' %}">Vacaciones</a>
           {% endif %}
-
-          {# LIQUIDACIONES: ADMIN, NOMINA, JEFATURA #}
-          {% if empleado_actual.rol == "ADMIN" or empleado_actual.rol == "NOMINA" or empleado_actual.rol == "JEFATURA" %}
-            <a href="{% url 'liquidaciones_list' %}" data-ruta="{% url 'liquidaciones_list' %}">Liquidaciones</a>
-          {% endif %}
+          
+          <a href="{% url 'liquidaciones_list' %}" data-ruta="{% url 'liquidaciones_list' %}">
+            {% if empleado_actual.rol == "NOMINA" %}
+              Liquidaciones
+            {% else %}
+              Mis liquidaciones
+            {% endif %}
+          </a>
 
           {# COMISIONES: ADMIN, JEFATURA, SUP_COM #}
           {% if empleado_actual.rol == "ADMIN" or empleado_actual.rol == "JEFATURA" or empleado_actual.rol == "SUP_COM" %}
             <a href="{% url 'comisiones_list' %}" data-ruta="{% url 'comisiones_list' %}">Comisiones</a>
           {% endif %}
 
-          {# ASISTENCIA: ADMIN, JEFATURA #}
-          {% if empleado_actual.rol == "ADMIN" or empleado_actual.rol == "JEFATURA" or empleado_actual.rol == "RRHH"%}
+          {# ASISTENCIA: ADMIN, JEFATURA, RRHH #}
+          {% if empleado_actual.rol == "ADMIN" or empleado_actual.rol == "JEFATURA" or empleado_actual.rol == "RRHH" %}
             <a href="{% url 'asistencia_list' %}" data-ruta="{% url 'asistencia_list' %}">Asistencia</a>
           {% endif %}
 
@@ -60,11 +63,40 @@
       {% endif %}
     </aside>
 
-    <!-- CONTENIDO -->
-    <main class="contenido">
-      {% block content %}{% endblock %}
-      <footer class="footer">© {{ now|date:"Y" }} Ticashop</footer>
-    </main>
+      <!-- CONTENIDO -->
+      <main class="contenido">
+        {# MENSAJES GLOBALES (éxito, error, info, etc.) #}
+        {% if messages %}
+          <div class="messages-container" style="margin-bottom: 12px;">
+            {% for message in messages %}
+              <div
+                class="alert alert-{{ message.tags }}"
+                style="
+                  padding: 8px 12px;
+                  border-radius: 6px;
+                  font-size: 13px;
+                  margin-bottom: 6px;
+                  {% if message.tags == 'success' %}
+                    background:#ecfdf3; color:#15803d; border:1px solid #bbf7d0;
+                  {% elif message.tags == 'error' or message.tags == 'danger' %}
+                    background:#fef2f2; color:#b91c1c; border:1px solid #fecaca;
+                  {% elif message.tags == 'warning' %}
+                    background:#fffbeb; color:#92400e; border:1px solid #fef3c7;
+                  {% else %}
+                    background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;
+                  {% endif %}
+                "
+              >
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+  
+        {% block content %}{% endblock %}
+        <footer class="footer">© {{ now|date:"Y" }} Ticashop</footer>
+      </main>
+  
   </div>
 
   {% block scripts %}{% endblock %}

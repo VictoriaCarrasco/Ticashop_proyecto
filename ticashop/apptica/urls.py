@@ -13,6 +13,12 @@ urlpatterns = [
     path('admin/usuarios/', views.usuarios_list, name='usuarios_list'),
     path('admin/usuarios/nuevo/', views.usuario_create, name='usuario_create'),
     path('admin/empleados/', views.empleados_list, name='empleados_list'),
+    path("admin/empleados/<int:pk>/editar/", views.empleado_edit, name="empleado_edit"),
+    path(
+        "admin/empleados/<int:pk>/activar-desactivar/",
+        views.empleado_toggle_activo,
+        name="empleado_toggle_activo",
+    ),
 
     # Vacaciones
     path('vacaciones/', views.vacaciones_list, name='vacaciones_list'),

@@ -801,7 +801,50 @@ def empleados_list(request):
         return redirect("dashboard")
 
     empleados = Empleado.objects.all().order_by("id")
-    return render(request, "admin/empleados_list.html", {"empleados": empleados})
+    return render(
+        request,
+        "admin/empleados_list.html",
+        {"empleados": empleados},
+    )
+
+
+@login_required
+def empleado_edit(request, pk):
+    if not request.user.is_staff:
+        return redirect("dashboard")
+
+    empleado = get_object_or_404(Empleado, pk=pk)
+
+    if request.method == "POST":
+        form = EmpleadoForm(request.POST, instance=empleado)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Empleado actualizado correctamente.")
+            return redirect("empleados_list")
+    else:
+        form = EmpleadoForm(instance=empleado)
+
+    return render(
+    request,
+    "usuarios_form.html",         
+    {"form": form, "titulo": "Editar empleado"},
+)
+
+
+
+@login_required
+def empleado_toggle_activo(request, pk):
+    if not request.user.is_staff:
+        return redirect("dashboard")
+
+    empleado = get_object_or_404(Empleado, pk=pk)
+    empleado.activo = not empleado.activo
+    empleado.save(update_fields=["activo"])
+
+    estado = "activado" if empleado.activo else "desactivado"
+    messages.success(request, f"Empleado {estado} correctamente.")
+    return redirect("empleados_list")
+
 
 
 SUELDOS_FIJOS_ROL = {

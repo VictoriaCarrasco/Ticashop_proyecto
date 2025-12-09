@@ -1,46 +1,52 @@
 {% extends "base.html" %}
-{% load static %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/admin.css' %}">
-{% endblock %}
+{% block title %}Empleados{% endblock %}
 
 {% block content %}
+<h1 class="page-title">Empleados</h1>
 
-<h1 class="admin-title">Empleados</h1>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Nombre</th>
+      <th>Email</th>
+      <th>RUT</th>
+      <th>Rol</th>
+      <th>Departamento</th>
+      <th>Estado</th>
+      <th class="right">Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for e in empleados %}
+      <tr>
+        <td>{{ e.nombre }}</td>
+        <td>{{ e.email }}</td>
+        <td>{{ e.rut }}</td>
+        <td>{{ e.get_rol_display }}</td>
+        <td>{{ e.get_departamento_display }}</td>
+        <td>
+          {% if e.activo %}
+            <span class="badge ok">Activo</span>
+          {% else %}
+            <span class="badge warn">Inactivo</span>
+          {% endif %}
+        </td>
+        <td class="right">
+          <a href="{% url 'empleado_edit' e.id %}" class="btn ghost btn-sm">
+            Editar
+          </a>
 
-<div class="admin-table-container">
-    <table class="admin-table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>RUT</th>
-                <th>Email</th>
-                <th>Rol</th>
-                <th>Departamento</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for e in empleados %}
-            <tr>
-                <td>{{ e.id }}</td>
-                <td>{{ e.nombre }}</td>
-                <td>{{ e.rut }}</td>
-                <td>{{ e.email }}</td>
-
-                <td>
-                    <span class="badge badge-role">{{ e.rol }}</span>
-                </td>
-
-                <td>
-                    <span class="badge badge-depto">{{ e.departamento }}</span>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
+          <a href="{% url 'empleado_toggle_activo' e.id %}"
+             class="btn btn-sm {% if e.activo %}danger{% else %}primary{% endif %}">
+            {% if e.activo %}Desactivar{% else %}Activar{% endif %}
+          </a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="7" class="empty">No hay empleados registrados.</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% endblock %}

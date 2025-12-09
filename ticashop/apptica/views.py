@@ -21,7 +21,7 @@ from django.contrib.auth.hashers import make_password
 from .decorators import validar_rol
 from calendar import monthrange
 from .models import ComisionVenta 
-
+from django.contrib import messages
 
 
 from .forms import EmpleadoForm
@@ -32,24 +32,6 @@ from .models import (
     ComisionVenta,
     RegistroAsistencia,
 )
-
-# apptica/views.py
-
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.contrib.auth import login, logout
-from django.contrib.auth.models import User
-
-from .models import Empleado
-# (el resto de tus imports puede ir aquí también)
-
-
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.contrib.auth import login, logout
-from django.contrib.auth.models import User
-from .models import Empleado
-
 
 
 # ===========================
@@ -83,15 +65,25 @@ def vacaciones_list(request):
     try:
         empleado = Empleado.objects.get(id=empleado_id)
     except Empleado.DoesNotExist:
-        empleado = None
+        messages.error(request, "No se encontró tu información de empleado.")
+        return redirect("dashboard")
     
-    # Admin y RRHH ven todas, empleados normales solo las suyas
-    if request.user.is_staff or (empleado and empleado.rol in ["ADMIN", "RRHH"]):
-        qs = SolicitudVacacional.objects.select_related("empleado").order_by("-fecha_inicio", "-id")
+    # Admin y RRHH ven todas, el resto solo las suyas
+    if empleado.rol in ["ADMIN", "RRHH"]:
+        qs = (
+            SolicitudVacacional.objects
+            .select_related("empleado")
+            .order_by("-fecha_inicio", "-id")
+        )
     else:
-        qs = SolicitudVacacional.objects.filter(empleado=empleado).order_by("-fecha_inicio", "-id")
+        qs = (
+            SolicitudVacacional.objects
+            .filter(empleado=empleado)
+            .order_by("-fecha_inicio", "-id")
+        )
     
     return render(request, "vacaciones_list.html", {"solicitudes": qs})
+
 
 @login_required
 @validar_rol(["ADMIN", "RRHH"])
@@ -338,7 +330,7 @@ def liquidaciones_generar(request):
     creadas = 0
 
     for e in empleados:
-        sueldo_base = Decimal(e.sueldo_fijo)  # Usa sueldo fijo individual
+        sueldo_base = Decimal(e.sueldo_fijo)
 
         comision_reg = ComisionVenta.objects.filter(
             empleado=e,
@@ -348,7 +340,6 @@ def liquidaciones_generar(request):
 
         comision = comision_reg.comision if comision_reg else Decimal("0")
 
-        # Calcular descuento por ausencias
         total_days_in_month = monthrange(periodo.year, periodo.month)[1]
 
         ausencias = RegistroAsistencia.objects.filter(
@@ -362,17 +353,26 @@ def liquidaciones_generar(request):
         descuento_ausencias = sueldo_diario * Decimal(ausencias)
         monto_final = sueldo_base - descuento_ausencias
 
-        obj, created = Liquidacion.objects.update_or_create(
-            empleado=e,
-            periodo=periodo,
-            defaults={
-                "monto_total": monto_final,
-                "estado": "PENDIENTE_FIRMA",
-                "comisiones": comision,
-            },
-        )
+        # 👇 NO usar update_or_create, para no pisar el estado
+        try:
+            obj = Liquidacion.objects.get(empleado=e, periodo=periodo)
+            # actualizamos montos, comisiones…
+            obj.monto_total = monto_final
+            obj.comisiones = comision
 
-        if created:
+            # solo si NO está firmada, la dejamos pendiente
+            if obj.estado != "FIRMADA":
+                obj.estado = "PENDIENTE_FIRMA"
+
+            obj.save()
+        except Liquidacion.DoesNotExist:
+            Liquidacion.objects.create(
+                empleado=e,
+                periodo=periodo,
+                monto_total=monto_final,
+                comisiones=comision,
+                estado="PENDIENTE_FIRMA",
+            )
             creadas += 1
 
     messages.success(
@@ -380,6 +380,7 @@ def liquidaciones_generar(request):
         f"Se generaron/actualizaron {creadas} liquidaciones con descuento por ausencias."
     )
     return redirect("liquidaciones_list")
+
 
 
 @login_required
@@ -828,13 +829,16 @@ def crear_usuario_empleado(request):
 
         sueldo_fijo = SUELDOS_FIJOS_ROL.get(rol, 500000)  # Obtiene monto fijo por rol
 
+        # 👇 NUEVO: definir si será staff o no
+        es_staff = rol in ["ADMIN", "RRHH"]
+
         # Crear usuario Django
         user = User.objects.create(
             username=email.split("@")[0],
             email=email,
             password=make_password(password),
             is_active=True,
-            is_staff=True,
+            is_staff=es_staff,   # 👈 ahora sí existe
         )
 
         # Crear empleado con SUELDO FIJO
@@ -852,6 +856,7 @@ def crear_usuario_empleado(request):
         return redirect("admin_home")
 
     return render(request, "admin/crear_usuario_empleado.html")
+
 
 
 
